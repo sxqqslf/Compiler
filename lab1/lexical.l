@@ -30,13 +30,13 @@ ws			{delim}+
 "||"		{ yylval.type_node = newNode(1, yylineno, "OR", yytext); return OR; }
 "."			{ yylval.type_node = newNode(1, yylineno, "DOT", yytext); return DOT; }
 "!"			{ yylval.type_node = newNode(1, yylineno, "NOT", yytext); return NOT; }
-int|float	{ yylval.type_node = newNode(1, yylineno, "TYPE", yytext); return TYPE; }
 "("			{ yylval.type_node = newNode(1, yylineno, "LP", yytext); return LP; }
 ")"			{ yylval.type_node = newNode(1, yylineno, "RP", yytext); return RP; }
 "["			{ yylval.type_node = newNode(1, yylineno, "LB", yytext); return LB; }
 "]"			{ yylval.type_node = newNode(1, yylineno, "RB", yytext); return RB; }
 "{"			{ yylval.type_node = newNode(1, yylineno, "LC", yytext); return LC; }
 "}"			{ yylval.type_node = newNode(1, yylineno, "RC", yytext); return RC; }
+int|float	{ yylval.type_node = newNode(1, yylineno, "TYPE", yytext); return TYPE; }
 struct		{ yylval.type_node = newNode(1, yylineno, "STRUCT", yytext); return STRUCT; }
 return		{ yylval.type_node = newNode(1, yylineno, "RETURN", yytext); return RETURN; }
 if			{ yylval.type_node = newNode(1, yylineno, "IF", yytext); return IF;  }

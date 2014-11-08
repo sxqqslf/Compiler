@@ -39,9 +39,9 @@
 
 %%
 
-Program		:	ExtDefList						{ printf("first\n"); $$ = createNode(1, "Program", $1); root = $$; }
+Program		:	ExtDefList						{ $$ = createNode(1, "Program", $1); root = $$; }
 			;
-ExtDefList	:	ExtDef ExtDefList				{ $$ = createNode(2,"ExtDefList", $2, $1); }
+ExtDefList	:	ExtDef ExtDefList				{ $$ = createNode(2, "ExtDefList", $2, $1); }
 			|									{ $$ = NULL; }
 			;
 ExtDef		:	Specifier ExtDecList SEMI		{ $$ = createNode(3, "ExtDef", $3, $2, $1); }
@@ -125,9 +125,7 @@ int main(int argc, char** argv) {
 	if (!f) {
 		perror(argv[1]); return 1;
 	}
-	printf("enter\n");
 	yyrestart(f); yyparse();
-	printf("enter\n");
 	printTree(root, 0);
 	return 0;
 }

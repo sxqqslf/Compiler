@@ -1518,14 +1518,14 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 42 "syntax.y"
-    { printf("first\n"); (yyval.type_node) = createNode(1, "Program", (yyvsp[(1) - (1)].type_node)); root = (yyval.type_node); }
+    { (yyval.type_node) = createNode(1, "Program", (yyvsp[(1) - (1)].type_node)); root = (yyval.type_node); }
     break;
 
   case 3:
 
 /* Line 1806 of yacc.c  */
 #line 44 "syntax.y"
-    { (yyval.type_node) = createNode(2,"ExtDefList", (yyvsp[(2) - (2)].type_node), (yyvsp[(1) - (2)].type_node)); }
+    { (yyval.type_node) = createNode(2, "ExtDefList", (yyvsp[(2) - (2)].type_node), (yyvsp[(1) - (2)].type_node)); }
     break;
 
   case 4:
@@ -2161,9 +2161,7 @@ int main(int argc, char** argv) {
 	if (!f) {
 		perror(argv[1]); return 1;
 	}
-	printf("enter\n");
 	yyrestart(f); yyparse();
-	printf("enter\n");
 	printTree(root, 0);
 	return 0;
 }

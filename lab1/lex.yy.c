@@ -392,12 +392,12 @@ struct yy_trans_info
 	};
 static yyconst flex_int16_t yy_accept[79] =
     {   0,
-        0,    0,   36,   34,    1,    1,   18,   34,   20,   21,
+        0,    0,   36,   34,    1,    1,   18,   34,   19,   20,
        13,   11,    3,   12,   17,   14,   33,   33,    2,    6,
-        4,    5,   31,   22,   23,   31,   31,   31,   31,   31,
-       31,   24,   34,   25,    1,   10,   15,    0,    0,   33,
+        4,    5,   31,   21,   22,   31,   31,   31,   31,   31,
+       31,   23,   34,   24,    1,   10,   15,    0,    0,   33,
         8,    9,    7,   31,   31,   31,   28,   31,   31,   31,
-       31,   16,   32,   33,   31,   31,   19,   31,   31,   31,
+       31,   16,   32,   33,   31,   31,   25,   31,   31,   31,
        33,   29,   31,   31,   31,   31,   33,   31,   31,   30,
        33,   27,   26,   33,   33,   33,   33,    0
     } ;
@@ -908,37 +908,37 @@ YY_RULE_SETUP
 case 19:
 YY_RULE_SETUP
 #line 33 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "TYPE", yytext); return TYPE; }
+{ yylval.type_node = newNode(1, yylineno, "LP", yytext); return LP; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 34 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "LP", yytext); return LP; }
+{ yylval.type_node = newNode(1, yylineno, "RP", yytext); return RP; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 35 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "RP", yytext); return RP; }
+{ yylval.type_node = newNode(1, yylineno, "LB", yytext); return LB; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 36 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "LB", yytext); return LB; }
+{ yylval.type_node = newNode(1, yylineno, "RB", yytext); return RB; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 37 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "RB", yytext); return RB; }
+{ yylval.type_node = newNode(1, yylineno, "LC", yytext); return LC; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 38 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "LC", yytext); return LC; }
+{ yylval.type_node = newNode(1, yylineno, "RC", yytext); return RC; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 39 "lexical.l"
-{ yylval.type_node = newNode(1, yylineno, "RC", yytext); return RC; }
+{ yylval.type_node = newNode(1, yylineno, "TYPE", yytext); return TYPE; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP

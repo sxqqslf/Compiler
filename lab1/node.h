@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 struct node {
 	int	isTerminal;				//是否为终结符号
