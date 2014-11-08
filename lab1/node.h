@@ -1,27 +1,21 @@
+#ifndef _HEADERNAME_H
+#define _HEADERNAME_H
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#define LEN 128
-#define NULL 0
+#include <stdlib.h>
 
 struct node {
-	char*	type;
-	char*	value;
-	struct node* child;
-	struct node* next;
-	struct node() {
-		this->type	= NULL;
-		this->value	= NULL;
-		this->child	= NULL;
-		this->next	= NULL;
-	}
-	struct node(char* type, char* value) {
-		this->type = malloc(sizeof(type)+1);
-		this->type = malloc(sizeof(value)+1);
-		strcpy(this->type, type);
-		strcpy(this->value, value);
-		child = next = NULL;
-	}
+	int	isTerminal;				//是否为终结符号
+	int line;					//第一次出现的行号
+	char *type;					//类型（ID,INT,Program....）
+	char *value;					//属性值
+	struct node *child;
+	struct node *next;
 };
 
-typedef struct node node;
+extern struct node *newNode(int, int, char*, char* );
+extern struct node *createNode(int, ...) ;
+extern void printTree(struct node*, int) ;
+#endif

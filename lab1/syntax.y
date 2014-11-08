@@ -1,14 +1,14 @@
 %{
-	#include <stdio.h>
+	#include "lex.yy.c"
 	#include "node.h"
-	node* root;
+	struct node *root;
 %}
 
 %union {
-	int 	type_int;
-	float 	type_float;
-	double	type_double;
-	node*	type_node;
+	int type_int;
+	float type_float;
+	double type_double;
+	struct node *type_node;
 }
 
 %token <type_node> INT FLOAT ID TYPE
@@ -39,23 +39,23 @@
 
 %%
 
-Program		:	ExtDefList						{ $$ = createNode(1, "Program", $1); root = $$; }
+Program		:	ExtDefList						{ printf("first\n"); $$ = createNode(1, "Program", $1); root = $$; }
 			;
-ExtDefList	:	ExtDef ExtDefList				{ $$ = createNode(2,"ExtDefList", $1, $2); }
+ExtDefList	:	ExtDef ExtDefList				{ $$ = createNode(2,"ExtDefList", $2, $1); }
 			|									{ $$ = NULL; }
 			;
-ExtDef		:	Specifier ExtDecList SEMI		{ $$ = createNode(3, "ExtDef", $1, $2, $3); }
-			|	Specifier SEMI					{ $$ = createNode(2, "ExtDef", $1, $2); }
-			|	Specifier FunDec CompSt			{ $$ = createNode(3, "ExtDef", $1, $2, $3); }
+ExtDef		:	Specifier ExtDecList SEMI		{ $$ = createNode(3, "ExtDef", $3, $2, $1); }
+			|	Specifier SEMI					{ $$ = createNode(2, "ExtDef", $2, $1); }
+			|	Specifier FunDec CompSt			{ $$ = createNode(3, "ExtDef", $3, $2, $1); }
 			;
 ExtDecList	:	VarDec							{ $$ = createNode(1, "ExtDecList", $1); }
-			|	VarDec COMMA ExtDecList			{ $$ = createNode(3, "ExtDecList", $1, $2, $3); }
+			|	VarDec COMMA ExtDecList			{ $$ = createNode(3, "ExtDecList", $3, $2, $1); }
 			;
 Specifier	:	TYPE 							{ $$ = createNode(1, "Specifier", $1); }
 			|	StructSpecifier					{ $$ = createNode(1, "Specifier", $1); }
 			;
-StructSpecifier	:	STRUCT OptTag LC DefList RC	{ $$ = createNode(5, "StructSpecifier", $1, $2, $3, $4, $5); }
-				|	STRUCT Tag					{ $$ = createNode(2, "StructSpecifier", $1, $2); }
+StructSpecifier	:	STRUCT OptTag LC DefList RC	{ $$ = createNode(5, "StructSpecifier", $5, $4, $3, $2, $1); }
+				|	STRUCT Tag					{ $$ = createNode(2, "StructSpecifier", $2, $1); }
 				;
 OptTag		:	ID								{ $$ = createNode(1, "OptTag", $1); }
 			|									{ $$ = NULL; }
@@ -63,71 +63,72 @@ OptTag		:	ID								{ $$ = createNode(1, "OptTag", $1); }
 Tag			:	ID								{ $$ = createNode(1, "Tag", $1); }
 			;					
 VarDec		:	ID								{ $$ = createNode(1, "VarDec", $1); }
-			|	VarDec LB INT RB				{ $$ = createNode(4, "VarDec", $1, $2, $3, $4); }
+			|	VarDec LB INT RB				{ $$ = createNode(4, "VarDec", $4, $3, $2, $1); }
 			;
-FunDec		:	ID LP VarList RP				{ $$ = createNode(4, "FunDec", $1, $2, $3, $4); }
-			|	ID LP RP						{ $$ = createNode(3, "FunDec", $1, $2, $3); }
+FunDec		:	ID LP VarList RP				{ $$ = createNode(4, "FunDec", $4, $3, $2, $1); }
+			|	ID LP RP						{ $$ = createNode(3, "FunDec", $3, $2, $1); }
 			;
-VarList		:	ParamDec COMMA VarList			{ $$ = createNode(3, "VarList", $1, $2, $3); }
+VarList		:	ParamDec COMMA VarList			{ $$ = createNode(3, "VarList", $3, $2, $1); }
 			|	ParamDec						{ $$ = createNode(1, "VarList", $1); }
 			;
-ParamDec	:	Specifier VarDec				{ $$ = createNode(2, "ParamDec", $1, $2); }
+ParamDec	:	Specifier VarDec				{ $$ = createNode(2, "ParamDec", $2, $1); }
 			;
-CompSt		:	LC DefList StmtList RC			{ $$ = createNode(4, "CompSt", $1, $2, $3, $4); }
+CompSt		:	LC DefList StmtList RC			{ $$ = createNode(4, "CompSt", $4, $3, $2, $1); }
 			;
-StmtList	:	Stmt StmtList					{ $$ = createNode(2, "StmtList", $1, $2); }
+StmtList	:	Stmt StmtList					{ $$ = createNode(2, "StmtList", $2, $1); }
 			|									{ $$ = NULL; }
 			;
-Stmt		:	Exp	SEMI						{ $$ = createNode(2, "Stmt", $1, $2); }
+Stmt		:	Exp	SEMI						{ $$ = createNode(2, "Stmt", $2, $1); }
 			|	CompSt							{ $$ = createNode(1, "Stmt", $1); }
-			|	RETURN Exp SEMI					{ $$ = createNode(3, "Stmt", $1, $2, $3); }
-			|	IF LP Exp RP Stmt %prec LOWER_THAN_ELSE	{ $$ = createNode(5, "Stmt", $1, $2, $3, $4, $5); }
-			|	IF LP Exp RP Stmt ELSE Stmt		{ $$ = createNode(7, "Stmt", $1, $2, $3, $4, $5, $6, $7); }
-			|	WHILE LP Exp RP Stmt			{ $$ = createNode(5, "Stmt", $1, $2, $3, $4, $5); }
+			|	RETURN Exp SEMI					{ $$ = createNode(3, "Stmt", $3, $2, $1); }
+			|	IF LP Exp RP Stmt %prec LOWER_THAN_ELSE	{ $$ = createNode(5, "Stmt", $5, $4, $3, $2, $1); }
+			|	IF LP Exp RP Stmt ELSE Stmt		{ $$ = createNode(7, "Stmt", $7, $6, $5, $4, $3, $2, $1); }
+			|	WHILE LP Exp RP Stmt			{ $$ = createNode(5, "Stmt", $5, $4, $3, $2, $1); }
 			;
-DefList		:	Def DefList						{ $$ = createNode(2, "DefList", $1, $2); }
+DefList		:	Def DefList						{ $$ = createNode(2, "DefList", $2, $1); }
 			|									{ $$ = NULL; }
 			;
-Def			:	Specifier DecList SEMI			{ $$ = createNode(3, "Def", $1, $2, $3); }
+Def			:	Specifier DecList SEMI			{ $$ = createNode(3, "Def", $3, $2, $1); }
 			;
 DecList		:	Dec								{ $$ = createNode(1, "DecList", $1); }
-			|	Dec COMMA DecList				{ $$ = createNode(3, "DecList", $1, $2, $3); }
+			|	Dec COMMA DecList				{ $$ = createNode(3, "DecList", $3, $2, $1); }
 			;
 Dec			:	VarDec							{ $$ = createNode(1, "Dec", $1); }
-			|	VarDec ASSIGNOP Exp				{ $$ = createNode(3, "Dec", $1, $2, $3); }
+			|	VarDec ASSIGNOP Exp				{ $$ = createNode(3, "Dec", $3, $2, $1); }
 			;
-Exp			:	Exp ASSIGNOP Exp				{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp AND Exp						{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp OR Exp						{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			| 	Exp RELOP Exp					{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp PLUS Exp					{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp MINUS Exp					{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp STAR Exp					{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp DIV Exp						{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	LP Exp RP						{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	MINUS Exp						{ $$ = createNode(2, "Exp", $1, $2); }
-			|	NOT Exp							{ $$ = createNode(2, "Exp", $1, $2); }
-			|	ID LP Args RP					{ $$ = createNode(4, "Exp", $1, $2, $3, $4); }
-			|	ID LP RP						{ $$ = createNode(3, "Exp", $1, $2, $3); }
-			|	Exp LB Exp RB					{ $$ = createNode(4, "Exp", $1, $2, $3, $4); }
-			|	Exp DOT ID						{ $$ = createNode(3, "Exp", $1, $2, $3); }	
+Exp			:	Exp ASSIGNOP Exp				{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp AND Exp						{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp OR Exp						{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			| 	Exp RELOP Exp					{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp PLUS Exp					{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp MINUS Exp					{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp STAR Exp					{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp DIV Exp						{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	LP Exp RP						{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	MINUS Exp						{ $$ = createNode(2, "Exp", $2, $1); }
+			|	NOT Exp							{ $$ = createNode(2, "Exp", $2, $1); }
+			|	ID LP Args RP					{ $$ = createNode(4, "Exp", $4, $3, $2, $1); }
+			|	ID LP RP						{ $$ = createNode(3, "Exp", $3, $2, $1); }
+			|	Exp LB Exp RB					{ $$ = createNode(4, "Exp", $4, $3, $2, $1); }
+			|	Exp DOT ID						{ $$ = createNode(3, "Exp", $3, $2, $1); }	
 			|	ID								{ $$ = createNode(1, "Exp", $1); }
 			|	INT								{ $$ = createNode(1, "Exp", $1); }
 			|	FLOAT							{ $$ = createNode(1, "Exp", $1); }
 			;
-Args		:	Exp COMMA Args					{ $$ = createNode(3, "Args", $1, $2, $3); }
+Args		:	Exp COMMA Args					{ $$ = createNode(3, "Args", $3, $2, $1); }
 			|	Exp								{ $$ = createNode(1, "Args", $1); }
 			;
 
 %%
-#include "lex.yy.c"
 int main(int argc, char** argv) {
-	if (argc <= 1) return 1;
 	FILE *f = fopen(argv[1], "r");
 	if (!f) {
 		perror(argv[1]); return 1;
 	}
+	printf("enter\n");
 	yyrestart(f); yyparse();
+	printf("enter\n");
+	printTree(root, 0);
 	return 0;
 }
 yyerror(char* msg) {
