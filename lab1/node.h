@@ -2,6 +2,7 @@
 #define _HEADERNAME_H
 
 #include <stdio.h>
+#include <math.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
