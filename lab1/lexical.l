@@ -6,7 +6,7 @@
 %option yylineno
 digit		[0-9]
 letter		[A-Za-z]
-float		{digit}*(\.{digit}+)([Ee][+-]?{digit}+)?
+float		{digit}*(\.{digit}*)([Ee][+-]?{digit}+)?
 int			0|([1-9]{digit}{0,9})
 octal		0[0-7]+
 hex			0x[0-9A-Fa-f]+
