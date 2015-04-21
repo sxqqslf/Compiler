@@ -1,0 +1,1 @@
+array   a[exp]   exp的结果是float,应该报错
