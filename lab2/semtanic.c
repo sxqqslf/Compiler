@@ -3,6 +3,23 @@
 #include "node.h"
 #include "syntax.tab.h"
 
+void init() {
+	int i;
+	for (i = 0; i < HASHSIZE; i ++)
+		varHashtable[i] = funcHashtable[i] = stack[i] = NULL;
+}
+
+void insertVar(FieldList var) {
+	unsigned int index = hash_pjw(var->name);	
+	if (varHashtable[index] == NULL)
+		varHashtable[index] = var;
+	else {
+		var->tail = varHashtable[index]->tail;
+		varHashtable[index]->tail = var;
+		var->tail->head = var;
+	}
+}
+
 void travel(struct node *root) {
 	if (root == NULL) return ;
 
@@ -28,8 +45,60 @@ void ExtDef(struct node *root) {
 		FunctionMessage *funType = FunDec(child->next, type);
 		if (strcmp(child->next->next->type, "SEMI") == 0) 
 			funType->visitedTag = 0;
-		else 
+		else { 
 			funType->visitedTag = 1;
+			FieldList index = funType->argList;
+			FieldList tmp = stack[top++], last = NULL;  
+			while (index != NULL) {							//将函数的参数插入符号表
+				tmp = (FieldList)malloc(sizeof(FieldList));
+				tmp->name = malloc(strlen(index->name) + 1);
+				strcpy(tmp->name, index->name);
+				tmp->lineno = index->lineno;
+				tmp->type = index->type;					//这里不再malloc
+				tmp->tail = tmp->head = tmp->down = NULL;
+				if (last != NULL) last->down = tmp;
+				last = tmp;
+				insertVar(tmp);
+				index = index->tail;
+			}
+			//函数定义里的Compst，把参数传入，和第一层的Compst中的变量比较，不能有相同
+		 	Compst(child->next->next, stack[top-1]);	
+		}
+	}
+}
+
+void Compst(struct node *root, FieldList var) {
+	if (root == NULL) return ;
+
+	struct node *child = root->child->next;		//DefList
+	FieldList varIn = DefList(child);	
+
+	if (var != NULL && varIn != NULL) {			//函数定义部分的Compst
+		FieldList store = varIn;
+		while (varIn != NULL) {
+			FieldList tmp = var;
+			int flag = 0;
+			while (tmp != NULL) {
+				if (compare(varIn, tmp) == 0) {
+					printf("Error Type 3 at Line %d: Redefined variable %s\n", tmp->lineno, tmp->name);
+					flag = 1;
+				}
+				tmp = tmp->down;
+			}
+			if (!flag) insertVar(varIn);
+			varIn = varIn->down;
+		}
+		//把和函数参数同一层的变量链表接到参数表的后方
+		varIn = store;
+		while (var->down!= NULL) var = var->down;
+		var->down = varIn;
+	} else {					//StmtList部分的Compst
+		FieldList st = stack[top ++];
+		st = varIn;
+		while (varIn != NULL) {
+			insertVar(varIn);
+			varIn = varIn->down;
+		}
 	}
 }
 
@@ -46,10 +115,10 @@ FunctionMessage *FunDec(struct node *root, Type_ type) {
 	ret->next = NULL;
 
 	if (strcmp(child->next->next->type, "RP") == 0) 
-		argList = NULL;
+		ret->argList = NULL;
 	else 
-		argList = VarList(child->next->next);
-
+		ret->argList = VarList(child->next->next);
+	
 	return ret;
 }
 
@@ -74,7 +143,7 @@ FieldList VarList(struct node *root) {
 			}
 			iter->tail = tmp;
 			if (flag)			//函数定义时，参数重复定义
-				printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", child->line, tmp->name);
+				printf("Error Type 3 at Line %d: Redefined variable \"%s\".\n", child->line, tmp->name);
 		}
 	}
 
@@ -114,6 +183,7 @@ FieldList VarDec(struct node *root, Type type) {
 }
 
 int main() {
+	init();
 	travel(root);
 	return 0;
 }

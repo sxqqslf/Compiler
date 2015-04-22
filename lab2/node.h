@@ -32,9 +32,12 @@ typedef struct Type_ {
 } Type_;
 
 typedef struct FieldList_ {
-	char *name;
-	Type type;
-	FieldList tail;
+	char *name;					//变量名称
+	int lineno;					//行号
+	Type type;					//变量类型
+	FieldList tail;				//下一个变量
+	FieldList head; 			//上一个变量
+	FieldList down;				//纵向的下一个变量
 } FieldList_;
 
 typedef struct FunctionMessage {
@@ -46,15 +49,10 @@ typedef struct FunctionMessage {
 	FunctionMessage *next;		//下一个函数
 } FunctionMessage;
 
-typedef struct VariableMessage {
-	char *name;					//变量名称
-	int lineno;					//行号
-	Type_ varType;				//变量类型
-	VariableMessage *next;		//下一个变量
-} VariableMessage;
-
-unsigned int funcHashtable[HASHSIZE];
-unsigned int varHashtable[HASHSIZE];
+FunctionMessage funcHashtable[HASHSIZE];
+FieldList varHashtable[HASHSIZE];
+FieldList stack[HASHSIZE];		//其实不是这个size，懒得定义一个新的变量
+int top;						//栈指针
 extern struct node *newNode(int, int, char*, char* );
 extern struct node *createNode(int, ...) ;
 extern void printTree(struct node*, int) ;
