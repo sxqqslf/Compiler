@@ -2,7 +2,6 @@
 	#include "lex.yy.c"
 	#include "node.h"
 	int isError;
-	struct node *root;
 %}
 
 %error-verbose
@@ -50,6 +49,7 @@ ExtDefList	:	ExtDef ExtDefList				{ $$ = createNode(2, "ExtDefList", $2, $1); }
 ExtDef		:	Specifier ExtDecList SEMI		{ $$ = createNode(3, "ExtDef", $3, $2, $1); }
 			|	Specifier SEMI					{ $$ = createNode(2, "ExtDef", $2, $1); }
 			|	Specifier FunDec CompSt			{ $$ = createNode(3, "ExtDef", $3, $2, $1); }
+			|	Specifier FunDec SEMI			{ $$ = createNode(3, "ExtDef", $3, $2, $1); }
 			|	error SEMI						{ isError = 1; }
 			;
 ExtDecList	:	VarDec							{ $$ = createNode(1, "ExtDecList", $1); }
@@ -130,17 +130,3 @@ Args		:	Exp COMMA Args					{ $$ = createNode(3, "Args", $3, $2, $1); }
 			;
 
 %%
-int main(int argc, char** argv) {
-	FILE *f = fopen(argv[1], "r");
-	if (!f) {
-		perror(argv[1]); return 1;
-	}
-	root = NULL; isError = 0;
-	yyrestart(f); yyparse();
-	if (!isError)
-		printTree(root, 0);
-	return 0;
-}
-yyerror(char* msg) {
-	printf("Error type B at Line %d: %s.\n", yylineno, msg);
-}

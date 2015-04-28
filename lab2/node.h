@@ -23,9 +23,9 @@ typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 
 typedef struct Type_ {
-	enum { BASIC, ARRAY, STRUCTURE } kind;
+	enum { Int, Float, Array, Structure } kind;
 	union {
-		union { int intType; float floatType; } basic;
+		union { int intValue; float floatValue; } basic;
 		struct { Type elem; int size; } array; 
 		FieldList structure;
 	} u;
@@ -44,18 +44,47 @@ typedef struct FunctionMessage {
 	char *name; 				//函数名称
 	int lineno;					//行号
 	int visitedTag;				//0:声明,1:定义
-	Type_ returnType;			//返回值类型
+	Type returnType;			//返回值类型
 	FieldList argList;			//参数列表
-	FunctionMessage *next;		//下一个函数
+	struct FunctionMessage *next;		//下一个函数
 } FunctionMessage;
 
-FunctionMessage funcHashtable[HASHSIZE];
+FunctionMessage *funcHashtable[HASHSIZE];
 FieldList varHashtable[HASHSIZE];
+FieldList structHashtable[HASHSIZE];
 FieldList stack[HASHSIZE];		//其实不是这个size，懒得定义一个新的变量
 int top;						//栈指针
+struct node *root;
+
 extern struct node *newNode(int, int, char*, char* );
 extern struct node *createNode(int, ...) ;
 extern void printTree(struct node*, int) ;
 extern unsigned int hash_pjw(char* ) ;
 
+extern void init();
+extern void insertVar(FieldList );
+extern void travel(struct node * );
+extern void ExtDefList(struct node * );
+extern void ExtDef(struct node * );
+extern void ExtDecList(struct node *, Type );
+extern Type Specifier(struct node * );
+extern Type StructSpecifier(struct node * );
+extern FieldList DefList(struct node *, int );
+extern FieldList Def(struct node *, int );
+extern FieldList DecList(struct node *, Type, int );
+extern FieldList Dec(struct node *, Type, int );
+extern void Compst(struct node *, FieldList var, Type );
+extern void StmtList(struct node *, Type );
+extern void Stmt(struct node *, Type );
+extern FunctionMessage *FunDec(struct node *, Type );
+extern FieldList VarList(struct node * );
+extern FieldList ParamDec(struct node * );
+extern FieldList VarDec(struct node * , Type );
+extern Type Exp(struct node * );
+extern FieldList Args(struct node * );
+extern int compare(FieldList, FieldList );
+extern int compareType(Type, Type );
+extern int insertStruct(FieldList );
+extern void del(FieldList ); 
+extern void dell(Type );
 #endif

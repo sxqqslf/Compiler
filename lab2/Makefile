@@ -1,5 +1,5 @@
 all:
 	bison -d -v syntax.y
 	flex lexical.l
-	gcc syntax.tab.c node.c -lfl -ly -o parser -lm
+	gcc semtanic.c syntax.tab.c node.c -lfl -ly -o semtanic -lm -g
 

@@ -31,7 +31,7 @@ void ExtDefList(struct node *root) {
 	if (root == NULL) return ;
 
 	ExtDef(root->child);
-	ExtDefList(root->child->next);
+	ExtDefList(root->child);
 }
 
 void ExtDef(struct node *root) {
@@ -177,8 +177,8 @@ FieldList Dec(struct node *root, Type type, int isStruct) {
 	FieldList ret = VarDec(child, type);	
 
 	if (child->next != NULL) {
-		Type tmp = Exp(child->next->next);
-		if (compareType(tmp, type) != 0) 
+		FieldList tmp = Exp(child->next->next);
+		if (compareType(tmp->type, type) != 0) 
 			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", child->line);
 	}
 	return ret;
@@ -189,37 +189,28 @@ void Compst(struct node *root, FieldList var, Type returnType) {
 
 	struct node *child = root->child->next;		//DefList
 	FieldList varIn = DefList(child, 0);	
-
-	if (returnType != NULL) {			//函数定义部分的Compst
-		FieldList store = varIn, st = var;
-		if (var == NULL) var = varIn;
-		else {
-			while (varIn != NULL) {
-				FieldList tmp = var;
-				int flag = 0;
-				while (tmp != NULL) {
-					if (compare(varIn, tmp) == 0) {
-						printf("Error Type 3 at Line %d: Redefined variable %s\n", tmp->lineno, tmp->name);
-						flag = 1;
-					}
-					tmp = tmp->down;
+	if (var != NULL && varIn != NULL) {			//函数定义部分的Compst
+		FieldList store = varIn;
+		while (varIn != NULL) {
+			FieldList tmp = var;
+			int flag = 0;
+			while (tmp != NULL) {
+				if (compare(varIn, tmp) == 0) {
+					printf("Error Type 3 at Line %d: Redefined variable %s\n", tmp->lineno, tmp->name);
+					flag = 1;
 				}
-				if (!flag) insertVar(varIn);
-				varIn = varIn->down;
+				tmp = tmp->down;
 			}
-			//把和函数参数同一层的变量链表接到参数表的后方
-			varIn = store;
-			while (var->down!= NULL) var = var->down;
-			var->down = varIn;
+			if (!flag) insertVar(varIn);
+			varIn = varIn->down;
 		}
-		if (st != NULL) { var = st;	}
-		else stack[top ++] = varIn;
-		while (var != NULL) {
-			insertVar(var);
-			var = var->down;
-		}
+		//把和函数参数同一层的变量链表接到参数表的后方
+		varIn = store;
+		while (var->down!= NULL) var = var->down;
+		var->down = varIn;
 	} else {					//StmtList部分的Compst
-		stack[top ++] = varIn;
+		FieldList st = stack[top ++];
+		st = varIn;
 		while (varIn != NULL) {
 			insertVar(varIn);
 			varIn = varIn->down;
@@ -248,8 +239,8 @@ void Stmt(struct node *root, Type returnType) {
 	else if (strcmp(child->type, "Compst") == 0) 
 		Compst(child, NULL, returnType);
 	else if (strcmp(child->type, "RETURN") == 0) {
-		Type tmp = Exp(child->next);
-		if (compareType(tmp, returnType)) 
+		FieldList tmp = Exp(child->next);
+		if (compareType(tmp->type, returnType)) 
 			printf("Error type 8 at Line %d: Type mismatched for return.\n", child->next->line);
 	} else if (strcmp(child->type, "IF") == 0) {
 		Exp(child->next->next);
@@ -344,59 +335,46 @@ FieldList VarDec(struct node *root, Type type) {
 	return ret;
 }
 
-Type Exp(struct node *root) {
+FieldList Exp(struct node *root) {
 	if (root == NULL) return NULL;
 
 	struct node *child = root->child;
 	if (strcmp(child->type, "Exp") == 0) {
-		Type tmp1 = Exp(child);
+		FieldList tmp1 = Exp(child);
 		if (strcmp(child->next->next->type, "Exp") == 0) {
-			Type tmp2 = Exp(child->next->next);
-			assert(tmp2 != NULL);
+			FieldList tmp2 = Exp(child->next->next);
 			if (strcmp(child->next->type, "ASSIGNOP") == 0) {
 				struct node *tmp = child->child;
 				int flag = 0;
 				if (strcmp(tmp->type, "ID") == 0 && tmp->next == NULL) flag = 1;
-				if (strcmp(tmp->type, "Exp") == 0)
-					if (strcmp(tmp->next->type, "LB") == 0 || strcmp(tmp->next->type, "DOT") == 0) flag = 1;
-				if (!flag) {
+				if (strcmp(tmp->type, "Exp") == 0 && 
+					strcmp(tmp->next->type, "LB") == 0 || strcmp(tmp->next->type, "DOT") == 0) flag = 1;
+				if (!flag) 
 					printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", child->line);
-					return NULL;
-				}	
 			} else if (strcmp(child->next->type, "LB") == 0) {
-				if (tmp1->kind != 2) {
-					printf("Error type 10 at Line %d: \"%s\" is not an array.\n", child->line, child->value);
-					return NULL;
-				}
-				if (tmp2->kind != 0) {
-					printf("Error type 12 at Line %d: \"%lf\" is not an integer.\n", child->line, tmp2->u.basic.floatValue);
-					return NULL;
-				}
+				if (tmp1->type->kind != 2) 
+					printf("Error type 10 at Line %d: \"%s\" is not an array.\n", tmp1->lineno, tmp1->name);
+				if (tmp2->type->kind != 0)
+					printf("Error type 12 at Line %d: \"%lf\" is not an integer.\n", tmp2->lineno, tmp2->type->u.basic.floatValue);
 			} else if (strcmp(child->next->type, "DOT") == 0) {
-				if (tmp1->kind != 3) {
+				if (tmp1->type->kind != 3) 
 					printf("Error type 13 at Line %d: Illegal use of \".\".\n", child->line);
-					return NULL;
-				}
 			} else {
 				int flag = 0;
-				if (compareType(tmp1, tmp2)) flag = 1;
-				if ((tmp1->kind != 0 && tmp1->kind != 1) || 
-					(tmp2->kind != 0 && tmp2->kind != 1)) flag = 1;
-				if (flag) {
+				if (compareType(tmp1->type, tmp2->type)) flag = 1;
+				if ((tmp1->type->kind != 0 && tmp1->type->kind != 1) || 
+					(tmp2->type->kind != 0 && tmp2->type->kind != 1)) flag = 1;
+				if (flag) 
 					printf("Error type 7 at Line %d: Type mismatched for operands.\n", child->line);
-					return NULL;
-				}
 			}
-			return tmp2;
 		}
-		return tmp1;
 	}
 	if (strcmp(child->type, "LP") == 0) {
 		return Exp(child->next);
 	}
 	if (strcmp(child->type, "MINUS") == 0 || strcmp(child->type, "NOT") == 0) {
-		Type tmp = Exp(child->next);
-		if (tmp->kind != 0 && tmp->kind != 1) 
+		FieldList tmp = Exp(child->next);
+		if (tmp->type->kind != 0 && tmp->type->kind != 1) 
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", child->line);
 		return tmp;
 	}
@@ -423,11 +401,9 @@ Type Exp(struct node *root) {
 	}
 	if (strcmp(child->type, "ID") == 0) {
 		FieldList ret = varHashtable[hash_pjw(child->value)];
-		if (ret == NULL) {
+		if (ret == NULL) 
 			printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", child->line, child->value);
-			return NULL;
-		}
-		return ret->type;
+		return ret;
 	}
 	if (strcmp(child->type, "INT") == 0 || strcmp(child->type, "FLOAT") == 0) {
 		int flag = 0;
@@ -443,7 +419,7 @@ Type Exp(struct node *root) {
 			ret->type->u.basic.floatValue = atof(child->value);
 		ret->tail = ret->head = ret->down = NULL;
 
-		return ret->type;
+		return ret;
 	}
 }
 
@@ -451,13 +427,7 @@ FieldList Args(struct node *root) {
 	if (root == NULL) return NULL;
 
 	struct node *child = root->child;
-	Type type = Exp(child);
-	FieldList ret = (FieldList)malloc(sizeof(FieldList_));
-
-	ret->name = NULL;
-	ret->lineno = child->line;
-	ret->type = type;
-	ret->tail = ret->head = ret->down = NULL;
+	FieldList ret = Exp(child);
 
 	if (child->next != NULL) 
 		ret->down = Args(child->next->next);
