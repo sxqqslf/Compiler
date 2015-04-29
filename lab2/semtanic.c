@@ -8,16 +8,34 @@ void init() {
 	for (i = 0; i < HASHSIZE; i ++)
 		varHashtable[i] = stack[i] = NULL;
 		funcHashtable[i] = NULL;
+	level = 0;
 }
 
-void insertVar(FieldList var) {
+int insertVar(FieldList var, int lvl) {
 	unsigned int index = hash_pjw(var->name);	
-	if (varHashtable[index] == NULL)
+	if (varHashtable[index] == NULL) {
 		varHashtable[index] = var;
-	else {
+		varHashtable[index]->level = level;
+	} else {
+		if (varHashtable[index]->level == level && 
+			strcmp(varHashtable[index]->name, var->name) == 0) {
+			printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", var->lineno, var->name);
+			return 0;
+		}
 		var->tail = varHashtable[index]->tail;
 		varHashtable[index]->tail = var;
 		var->tail->head = var;
+	}
+	return 1;
+}
+
+int insertFunc(FunctionMessage *func) {
+	unsigned int index = hash_pjw(func->name);
+	if (funcHashtable[index] == NULL) {
+		funcHashtable[index] = func;
+		return 1;
+	} else {
+		printf("Error type 4 at Line %d: Redefined function \"%s\".\n", func->lineno, func->name);
 	}
 }
 
@@ -26,6 +44,7 @@ void travel(struct node *root) {
 
 	ExtDefList(root->child);
 }
+
 
 void ExtDefList(struct node *root) {
 	if (root == NULL) return ;
@@ -43,6 +62,7 @@ void ExtDef(struct node *root) {
 	if (strcmp(child->next->type, "ExtDecList") == 0) 
 		ExtDecList(child->next, type);
 	else if (strcmp(child->next->type, "FunDec") == 0) {
+		level ++;
 		FunctionMessage *funType = FunDec(child->next, type);
 		if (strcmp(child->next->next->type, "SEMI") == 0) 
 			funType->visitedTag = 0;
@@ -60,13 +80,14 @@ void ExtDef(struct node *root) {
 				tmp->tail = tmp->head = tmp->down = NULL;
 				if (last != NULL) last->down = tmp;
 				last = tmp;
-				insertVar(tmp);
-				index = index->tail;
+				insertVar(index, level);
+				index = index->down;
 			}
 			//函数定义里的Compst，把参数传入，和第一层的Compst中的变量比较，不能有相同, 并且把返回类型传入
 		 	Compst(child->next->next, stack[top-1], type);	
 			//Compst结束后，会把函数体内的变量都free，包括函数的参数
 		}
+		level --;
 	}
 }
 
@@ -75,7 +96,7 @@ void ExtDecList(struct node *root, Type type) {
 
 	struct node *child = root->child;
 	FieldList tmp = VarDec(child, type);
-	insertVar(tmp);
+	insertVar(tmp, level);
 
 	if (child->next != NULL)
 		ExtDecList(child->next->next, type);
@@ -86,11 +107,12 @@ Type Specifier(struct node *root) {
 	
 	struct node *child = root->child;
 	Type ret;
+
 	if (strcmp(child->type, "TYPE") == 0) {
 		ret = (Type)malloc(sizeof(Type_));
-		if (strcmp(child->value, "INT") == 0)
+		if (strcmp(child->value, "int") == 0)
 			ret->kind = 0;			
-		else if (strcmp(child->value, "FLOAT") == 0)
+		else if (strcmp(child->value, "float") == 0)
 			ret->kind = 1;
 	} else 
 		ret = StructSpecifier(child);
@@ -112,9 +134,9 @@ Type StructSpecifier(struct node *root) {
 		tmp->type = (Type)malloc(sizeof(Type_)); 
 		tmp->type->kind = 2;
 		if (flag) 
-			tmp->type->u.structure = DefList(child->next->next, 1);
+			tmp->type->u.structure = DefList(child->next->next, 1, NULL);
 		else 
-			tmp->type->u.structure = DefList(child->next, 1);
+			tmp->type->u.structure = DefList(child->next, 1, NULL);
 		int ret = insertStruct(tmp);
 		if (ret || varHashtable[hash_pjw(child->value)] != NULL) 	//已经定义了这个结构体，或者结构体名称和已有变量冲突
 			printf("Error type 16 at Line %d: Duplicated name \"%s\"\n", child->line, child->type);
@@ -132,13 +154,17 @@ Type StructSpecifier(struct node *root) {
 	}
 }
 
-FieldList DefList(struct node *root, int isStruct) {
+FieldList DefList(struct node *root, int isStruct, FieldList last) {
 	if (root == NULL) return NULL;
 
 	struct node *child = root->child;
 
 	FieldList ret = Def(child, isStruct);
-	ret->down = DefList(child->next, isStruct);
+
+	FieldList tmp = ((ret == NULL)?last:ret);
+	while (tmp->down != NULL) tmp = tmp->down;
+	if (child != NULL) 
+		tmp->down = DefList(child->next, isStruct, tmp);
 
 	return ret;
 }
@@ -176,57 +202,46 @@ FieldList Dec(struct node *root, Type type, int isStruct) {
 	struct node *child = root->child;
 	FieldList ret = VarDec(child, type);	
 
+	int flag = insertVar(ret, level);
 	if (child->next != NULL) {
 		Type tmp = Exp(child->next->next);
 		if (compareType(tmp, type) != 0) 
 			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", child->line);
 	}
-	return ret;
+	
+	return (flag) ? ret : NULL;
 }
 
-void Compst(struct node *root, FieldList var, Type returnType) {
+void Compst(struct node *root, FieldList arg, Type returnType) {
 	if (root == NULL) return ;
 
 	struct node *child = root->child->next;		//DefList
-	FieldList varIn = DefList(child, 0);	
+	if (returnType != NULL) {					//函数定义部分的Compst
+		if (strcmp(child->type, "DefList") == 0) {
+			FieldList varIn = DefList(child, 0, arg);	
+			FieldList store = varIn, tmp = arg;
 
-	if (returnType != NULL) {			//函数定义部分的Compst
-		FieldList store = varIn, st = var;
-		if (var == NULL) var = varIn;
-		else {
-			while (varIn != NULL) {
-				FieldList tmp = var;
-				int flag = 0;
-				while (tmp != NULL) {
-					if (compare(varIn, tmp) == 0) {
-						printf("Error Type 3 at Line %d: Redefined variable %s\n", tmp->lineno, tmp->name);
-						flag = 1;
-					}
-					tmp = tmp->down;
-				}
-				if (!flag) insertVar(varIn);
-				varIn = varIn->down;
+			if (arg == NULL) { 
+				arg = varIn; stack[top ++] = arg; 
+			} else {
+				//把和函数参数同一层的变量链表接到参数表的后方
+				while (arg->down!= NULL) arg = arg->down;
+				arg->down = varIn;
 			}
-			//把和函数参数同一层的变量链表接到参数表的后方
-			varIn = store;
-			while (var->down!= NULL) var = var->down;
-			var->down = varIn;
-		}
-		if (st != NULL) { var = st;	}
-		else stack[top ++] = varIn;
-		while (var != NULL) {
-			insertVar(var);
-			var = var->down;
 		}
 	} else {					//StmtList部分的Compst
-		stack[top ++] = varIn;
-		while (varIn != NULL) {
-			insertVar(varIn);
-			varIn = varIn->down;
+		level ++;
+		if (strcmp(child->type, "DefList") == 0) {
+			FieldList varIn = DefList(child, 0, arg);	
+			stack[top ++] = varIn;
 		}
+		level --;
 	}
 
-	StmtList(child->next, returnType);
+	if (strcmp(child->type, "DefList") == 0) 
+		StmtList(child->next, returnType);
+	else 
+		StmtList(child, returnType);
 
 	del(stack[top-1]); top --;
 }
@@ -236,15 +251,16 @@ void StmtList(struct node *root, Type returnType) {
 	
 	struct node *child = root->child;
 	Stmt(child, returnType);
-	StmtList(child->next, returnType);
+	if (child != NULL) StmtList(child->next, returnType);
 }
 
 void Stmt(struct node *root, Type returnType) {
 	if (root == NULL) return ;
 
 	struct node *child = root->child;
-	if (strcmp(child->type, "Exp") == 0) 
+	if (strcmp(child->type, "Exp") == 0) {
 		Exp(child);
+	}
 	else if (strcmp(child->type, "Compst") == 0) 
 		Compst(child, NULL, returnType);
 	else if (strcmp(child->type, "RETURN") == 0) {
@@ -281,7 +297,9 @@ FunctionMessage *FunDec(struct node *root, Type type) {
 	else 
 		ret->argList = VarList(child->next->next);
 	
-	return ret;
+
+	int flag = insertFunc(ret);
+	return (flag)?ret:NULL;
 }
 
 FieldList VarList(struct node *root) {
@@ -299,13 +317,13 @@ FieldList VarList(struct node *root) {
 		else {
 			FieldList iter = ret;
 			int flag = 0;
-			while (iter->tail != NULL) {	
+			while (iter->down != NULL) {	
 				if (compare(iter, tmp) == 0) flag = 1;
-				iter = iter->tail;
+				iter = iter->down;
 			}
-			iter->tail = tmp;
+			iter->down= tmp;
 			if (flag)			//函数定义时，参数重复定义
-				printf("Error Type 3 at Line %d: Redefined variable \"%s\".\n", child->line, tmp->name);
+				printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", child->line, tmp->name);
 		}
 	}
 
@@ -330,12 +348,13 @@ FieldList VarDec(struct node *root, Type type) {
 		ret = (FieldList)malloc(sizeof(FieldList_));
 		ret->name = malloc(strlen(child->value) + 1);
 		strcpy(ret->name, child->value);
+		ret->lineno = child->line;
 		ret->type = type;
-		ret->tail = NULL;
+		ret->tail = ret->head = ret->down = NULL;
 	} else {
 		ret = VarDec(child, type);
 		Type temp = (Type)malloc(sizeof(Type_));
-		temp->kind = 1;
+		temp->kind = 2;
 		temp->u.array.elem = ret->type;
 		temp->u.array.size = atoi(child->next->next->value);
 		ret->type = temp;
@@ -363,13 +382,17 @@ Type Exp(struct node *root) {
 					printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", child->line);
 					return NULL;
 				}	
+				if (tmp1 != NULL && tmp1->kind != tmp2->kind) {
+					printf("Error type 5 at Line %d: Type mismatched for assignment.\n", child->line);
+					return NULL;
+				}
 			} else if (strcmp(child->next->type, "LB") == 0) {
 				if (tmp1->kind != 2) {
-					printf("Error type 10 at Line %d: \"%s\" is not an array.\n", child->line, child->value);
+					printf("Error type 10 at Line %d: \"%s\" is not an array.\n", child->line, child->child->value);
 					return NULL;
 				}
 				if (tmp2->kind != 0) {
-					printf("Error type 12 at Line %d: \"%lf\" is not an integer.\n", child->line, tmp2->u.basic.floatValue);
+					printf("Error type 12 at Line %d: \"%.2lf\" is not an integer.\n", child->line, tmp2->u.basic.floatValue);
 					return NULL;
 				}
 			} else if (strcmp(child->next->type, "DOT") == 0) {
@@ -401,7 +424,13 @@ Type Exp(struct node *root) {
 		return tmp;
 	}
 	if (strcmp(child->type, "ID") == 0 && child->next != NULL) {
-		FunctionMessage *func = funcHashtable[hash_pjw(child->value)];
+		int index = hash_pjw(child->value);
+		FieldList var = varHashtable[index];
+		if (var != NULL) {
+			printf("Error type 11 at Line %d: \"%s\" is not a function.\n", child->line, child->value);
+			return NULL;
+		}
+		FunctionMessage *func = funcHashtable[index];
 		if (func == NULL) {
 			printf("Error type 2 at Line %d: Undefined function \"%s\".\n", child->line, child->value);
 			return NULL;
@@ -416,10 +445,27 @@ Type Exp(struct node *root) {
 		else 
 			arg = NULL;
 		FieldList argList = Args(arg);
-		if (compare(argList, func->argList) != 0) {
-			printf("Error type 9 at Line %d: Function arguments mismatched.\n", child->line);
-			return NULL;
+		FieldList tmp = func->argList;
+		char argl[100]; memset(argl, 0, sizeof(argl));
+		int flag = 0;
+		while (tmp != NULL) {
+			int type = tmp->type->kind;
+			if (flag) strcat(argl, ", ");
+			switch (type) {
+				case 0: strcpy(argl, "int"); break;
+				case 1: strcpy(argl, "float"); break;
+				case 2: strcpy(argl, tmp->name);
+						int t = tmp->type->u.array.size;
+						while ( t -- ) strcpy(argl, "[]");
+				break;
+				case 3: strcpy(argl, "struct "); strcpy(argl, tmp->name); break;
+			}
+			tmp = tmp->down;
 		}
+		if (compare(argList, func->argList) != 0) {
+			printf("Error type 9 at Line %d: Function \"%s(%s)\" is not applicable for arguments.\n", child->line, func->name, argl);
+			return NULL;
+		}	
 	}
 	if (strcmp(child->type, "ID") == 0) {
 		FieldList ret = varHashtable[hash_pjw(child->value)];
@@ -467,11 +513,20 @@ FieldList Args(struct node *root) {
 
 int compare(FieldList v1, FieldList v2) {	
 	//同为结构体，且相同
-	if (compareType(v1->type, v2->type) == 0 && v1->type->kind == 3)
-		return 0;				
-	//否则就判断变量名字
-	if (strcmp(v1->name, v2->name) == 0) 
-		return 0;
+	while ( 1 ) {
+		if (v1 == NULL && v2 != NULL || v1 != NULL && v2 == NULL) return 1;
+		if (v1 == NULL && v2 == NULL) return 0;
+		if (v1->type->kind == v2->type->kind) {
+			if (v1->type->kind == 3) {			//结构体
+				if (compareType(v1->type, v2->type)) return 1;
+			} else if (v1->type->kind == 2) {	//数组
+				if (compareType(v1->type->u.array.elem, v2->type->u.array.elem)) return 1;
+			} 
+			v1 = v1->down;
+			v2 = v2->down;
+		} else 
+			return 0;
+	}
 }
 
 int compareType(Type t1, Type t2) {
@@ -535,6 +590,7 @@ int main(int argc, char **argv) {
 	}
 	root = NULL; 
 	yyrestart(f); yyparse();
+	//printTree(root, 0);	
 	travel(root);
 	return 0;
 }

@@ -34,6 +34,7 @@ typedef struct Type_ {
 typedef struct FieldList_ {
 	char *name;					//变量名称
 	int lineno;					//行号
+	int level;
 	Type type;					//变量类型
 	FieldList tail;				//下一个变量
 	FieldList head; 			//上一个变量
@@ -54,6 +55,7 @@ FieldList varHashtable[HASHSIZE];
 FieldList structHashtable[HASHSIZE];
 FieldList stack[HASHSIZE];		//其实不是这个size，懒得定义一个新的变量
 int top;						//栈指针
+int level;
 struct node *root;
 
 extern struct node *newNode(int, int, char*, char* );
@@ -62,14 +64,14 @@ extern void printTree(struct node*, int) ;
 extern unsigned int hash_pjw(char* ) ;
 
 extern void init();
-extern void insertVar(FieldList );
+extern int insertVar(FieldList , int );
 extern void travel(struct node * );
 extern void ExtDefList(struct node * );
 extern void ExtDef(struct node * );
 extern void ExtDecList(struct node *, Type );
 extern Type Specifier(struct node * );
 extern Type StructSpecifier(struct node * );
-extern FieldList DefList(struct node *, int );
+extern FieldList DefList(struct node *, int , FieldList );
 extern FieldList Def(struct node *, int );
 extern FieldList DecList(struct node *, Type, int );
 extern FieldList Dec(struct node *, Type, int );
@@ -85,6 +87,7 @@ extern FieldList Args(struct node * );
 extern int compare(FieldList, FieldList );
 extern int compareType(Type, Type );
 extern int insertStruct(FieldList );
+extern int insertFunc(FunctionMessage * );
 extern void del(FieldList ); 
 extern void dell(Type );
 #endif
