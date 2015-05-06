@@ -15,18 +15,18 @@ BEGIN	lex.yy.c	125;"	d	file:
 COMMA	syntax.tab.c	/^     COMMA = 263,$/;"	e	enum:yytokentype	file:
 COMMA	syntax.tab.h	/^     COMMA = 263,$/;"	e	enum:yytokentype
 CompSt	syntax.y	/^CompSt		:	LC DefList StmtList RC			{ $$ = createNode(4, "CompSt", $4, $3, $2, $1); }$/;"	l
-Compst	semtanic.c	/^void Compst(struct node *root, FieldList var, Type returnType) {$/;"	f
+Compst	semtanic.c	/^void Compst(struct node *root, FieldList arg, Type returnType) {$/;"	f
 DIV	syntax.tab.c	/^     DIV = 276,$/;"	e	enum:yytokentype	file:
 DIV	syntax.tab.h	/^     DIV = 276,$/;"	e	enum:yytokentype
 DOT	syntax.tab.c	/^     DOT = 264,$/;"	e	enum:yytokentype	file:
 DOT	syntax.tab.h	/^     DOT = 264,$/;"	e	enum:yytokentype
 Dec	semtanic.c	/^FieldList Dec(struct node *root, Type type, int isStruct) {$/;"	f
 Dec	syntax.y	/^Dec			:	VarDec							{ $$ = createNode(1, "Dec", $1); }$/;"	l
-DecList	semtanic.c	/^FieldList DecList(struct node *root, Type type, int isStruct)  {$/;"	f
+DecList	semtanic.c	/^FieldList DecList(FieldList first, struct node *root, Type type, int isStruct)  {$/;"	f
 DecList	syntax.y	/^DecList		:	Dec								{ $$ = createNode(1, "DecList", $1); }$/;"	l
 Def	semtanic.c	/^FieldList Def(struct node *root, int isStruct) {$/;"	f
 Def	syntax.y	/^Def			:	Specifier DecList SEMI			{ $$ = createNode(3, "Def", $3, $2, $1); }$/;"	l
-DefList	semtanic.c	/^FieldList DefList(struct node *root, int isStruct) {$/;"	f
+DefList	semtanic.c	/^FieldList DefList(struct node *root, int isStruct, FieldList first) {$/;"	f
 DefList	syntax.y	/^DefList		:	Def DefList						{ $$ = createNode(2, "DefList", $2, $1); }$/;"	l
 ECHO	lex.yy.c	663;"	d	file:
 ELSE	syntax.tab.c	/^     ELSE = 289,$/;"	e	enum:yytokentype	file:
@@ -38,7 +38,7 @@ EQ	syntax.tab.c	/^     EQ = 271,$/;"	e	enum:yytokentype	file:
 EQ	syntax.tab.h	/^     EQ = 271,$/;"	e	enum:yytokentype
 EXIT_SUCCESS	syntax.tab.c	277;"	d	file:
 EXIT_SUCCESS	syntax.tab.c	305;"	d	file:
-Exp	semtanic.c	/^FieldList Exp(struct node *root) {$/;"	f
+Exp	semtanic.c	/^Type Exp(struct node *root) {$/;"	f
 Exp	syntax.y	/^Exp			:	Exp ASSIGNOP Exp				{ $$ = createNode(3, "Exp", $3, $2, $1); }$/;"	l
 ExtDecList	semtanic.c	/^void ExtDecList(struct node *root, Type type) {$/;"	f
 ExtDecList	syntax.y	/^ExtDecList	:	VarDec							{ $$ = createNode(1, "ExtDecList", $1); }$/;"	l
@@ -104,6 +104,8 @@ PLUS	syntax.tab.c	/^     PLUS = 273,$/;"	e	enum:yytokentype	file:
 PLUS	syntax.tab.h	/^     PLUS = 273,$/;"	e	enum:yytokentype
 ParamDec	semtanic.c	/^FieldList ParamDec(struct node *root) {$/;"	f
 ParamDec	syntax.y	/^ParamDec	:	Specifier VarDec				{ $$ = createNode(2, "ParamDec", $2, $1); }$/;"	l
+Pos	m1.c	/^int Pos;$/;"	v
+Pos	m1.c	/^struct Pos {$/;"	s	file:
 Position	t13.c	/^struct Position$/;"	s	file:
 Position	t14.c	/^struct Position$/;"	s	file:
 Position	t15.c	/^struct Position$/;"	s	file:
@@ -144,7 +146,7 @@ Type_	node.h	/^} Type_;$/;"	t	typeref:struct:Type_
 UINT16_MAX	lex.yy.c	80;"	d	file:
 UINT32_MAX	lex.yy.c	83;"	d	file:
 UINT8_MAX	lex.yy.c	77;"	d	file:
-VarDec	semtanic.c	/^FieldList VarDec(struct node *root, Type type) {$/;"	f
+VarDec	semtanic.c	/^FieldList VarDec(struct node *root, Type type, int isStruct, int top) {$/;"	f
 VarDec	syntax.y	/^VarDec		:	ID								{ $$ = createNode(1, "VarDec", $1); }$/;"	l
 VarList	semtanic.c	/^FieldList VarList(struct node *root) {$/;"	f
 VarList	syntax.y	/^VarList		:	ParamDec COMMA VarList			{ $$ = createNode(3, "VarList", $3, $2, $1); }$/;"	l
@@ -296,9 +298,11 @@ calc	node.c	/^int calc(int base, int st, char *s) {$/;"	f
 child	node.h	/^	struct node *child;$/;"	m	struct:node	typeref:struct:node::node
 compare	semtanic.c	/^int compare(FieldList v1, FieldList v2) {	$/;"	f
 compareType	semtanic.c	/^int compareType(Type t1, Type t2) {$/;"	f
+copyField	semtanic.c	/^void copyField(FieldList dst, FieldList src) {$/;"	f
+copyType	semtanic.c	/^void copyType(Type dst, Type src) {$/;"	f
 createNode	node.c	/^struct node *createNode(int arity, ...) {$/;"	f
 del	semtanic.c	/^void del(FieldList obj) {$/;"	f
-dell	semtanic.c	/^void dell(Type type) {$/;"	f
+dell	semtanic.c	/^void dell(Type t) {$/;"	f
 down	node.h	/^	FieldList down;				\/\/纵向的下一个变量$/;"	m	struct:FieldList_
 elem	node.h	/^		struct { Type elem; int size; } array; $/;"	m	struct:Type_::__anon2::__anon4
 flex_int16_t	lex.yy.c	/^typedef int16_t flex_int16_t;$/;"	t	file:
@@ -314,22 +318,32 @@ flex_uint32_t	lex.yy.c	/^typedef unsigned int flex_uint32_t;$/;"	t	file:
 flex_uint8_t	lex.yy.c	/^typedef uint8_t flex_uint8_t;$/;"	t	file:
 flex_uint8_t	lex.yy.c	/^typedef unsigned char flex_uint8_t; $/;"	t	file:
 floatValue	node.h	/^		union { int intValue; float floatValue; } basic;$/;"	m	union:Type_::__anon2::__anon3
+func	m2.c	/^int func(int a, int c[10]) {$/;"	f
+func	m3.c	/^int func(int a, int b, int c) {$/;"	f
 func	t4.c	/^int func()$/;"	f
 func	t4.c	/^int func(int i)$/;"	f
 func	t9.c	/^int func(int i)$/;"	f
 funcHashtable	node.h	/^FunctionMessage *funcHashtable[HASHSIZE];$/;"	v
+getargList	semtanic.c	/^char *getargList(FieldList arg) {$/;"	f
 hash_pjw	node.c	/^unsigned int hash_pjw(char *name) {$/;"	f
 head	node.h	/^	FieldList head; 			\/\/上一个变量$/;"	m	struct:FieldList_
 init	semtanic.c	/^void init() {$/;"	f
+insertFunc	semtanic.c	/^int insertFunc(FunctionMessage *func) {$/;"	f
 insertStruct	semtanic.c	/^int insertStruct(FieldList struc) {$/;"	f
-insertVar	semtanic.c	/^void insertVar(FieldList var) {$/;"	f
+insertVar	semtanic.c	/^int insertVar(FieldList var, int lvl) {$/;"	f
 intValue	node.h	/^		union { int intValue; float floatValue; } basic;$/;"	m	union:Type_::__anon2::__anon3
 isError	syntax.tab.c	/^	int isError;$/;"	v
 isTerminal	node.h	/^	int	isTerminal;				\/\/是否为终结符号$/;"	m	struct:node
 kind	node.h	/^	enum { Int, Float, Array, Structure } kind;$/;"	m	struct:Type_	typeref:enum:Type_::__anon1
+level	node.h	/^	int level;$/;"	m	struct:FieldList_
+level	node.h	/^int level;$/;"	v
 line	node.h	/^	int line;					\/\/第一次出现的行号$/;"	m	struct:node
 lineno	node.h	/^	int lineno;					\/\/行号$/;"	m	struct:FieldList_
 lineno	node.h	/^	int lineno;					\/\/行号$/;"	m	struct:FunctionMessage
+main	a1.c	/^int main(int i, int j) $/;"	f
+main	a2.c	/^int main()$/;"	f
+main	m1.c	/^int main() {$/;"	f
+main	m2.c	/^int main() {$/;"	f
 main	main.c	/^int main(int argc, char **argv) {$/;"	f
 main	semtanic.c	/^int main(int argc, char **argv) {$/;"	f
 main	t1.c	/^int main()$/;"	f
@@ -381,11 +395,13 @@ unput	lex.yy.c	201;"	d	file:
 value	node.h	/^	char *value;					\/\/属性值$/;"	m	struct:node
 varHashtable	node.h	/^FieldList varHashtable[HASHSIZE];$/;"	v
 visitedTag	node.h	/^	int visitedTag;				\/\/0:声明,1:定义$/;"	m	struct:FunctionMessage
+x	m1.c	/^	int x, y;$/;"	m	struct:Pos	file:
 x	t13.c	/^	float x, y;$/;"	m	struct:Position	file:
 x	t14.c	/^	float x, y;$/;"	m	struct:Position	file:
 x	t15.c	/^	float x, y;$/;"	m	struct:Position	file:
 x	t15.c	/^	int x;$/;"	m	struct:Position	file:
 x	t16.c	/^	float x;$/;"	m	struct:Position	file:
+y	m1.c	/^	int x, y;$/;"	m	struct:Pos	file:
 y	t13.c	/^	float x, y;$/;"	m	struct:Position	file:
 y	t14.c	/^	float x, y;$/;"	m	struct:Position	file:
 y	t15.c	/^	float x, y;$/;"	m	struct:Position	file:
@@ -532,3 +548,4 @@ yytype_uint8	syntax.tab.c	/^typedef YYTYPE_UINT8 yytype_uint8;$/;"	t	file:
 yytype_uint8	syntax.tab.c	/^typedef unsigned char yytype_uint8;$/;"	t	file:
 yyunput	lex.yy.c	/^    static void yyunput (int c, register char * yy_bp )$/;"	f	file:
 yyvs_alloc	syntax.tab.c	/^  YYSTYPE yyvs_alloc;$/;"	m	union:yyalloc	file:
+z	m1.c	/^	float z;$/;"	m	struct:Pos	file:
