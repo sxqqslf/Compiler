@@ -56,7 +56,7 @@ FieldList	node.h	/^typedef struct FieldList_* FieldList;$/;"	t	typeref:struct:Fi
 FieldList_	node.h	/^typedef struct FieldList_ {$/;"	s
 FieldList_	node.h	/^} FieldList_;$/;"	t	typeref:struct:FieldList_
 Float	node.h	/^	enum { Int, Float, Array, Structure } kind;$/;"	e	enum:Type_::__anon1
-FunDec	semtanic.c	/^FunctionMessage *FunDec(struct node *root, Type type) {$/;"	f
+FunDec	semtanic.c	/^FunctionMessage *FunDec(struct node *root, Type type, int isdefine, FieldList *stack) {$/;"	f
 FunDec	syntax.y	/^FunDec		:	ID LP VarList RP				{ $$ = createNode(4, "FunDec", $4, $3, $2, $1); }$/;"	l
 FunctionMessage	node.h	/^typedef struct FunctionMessage {$/;"	s
 FunctionMessage	node.h	/^} FunctionMessage;$/;"	t	typeref:struct:FunctionMessage
@@ -106,6 +106,7 @@ ParamDec	semtanic.c	/^FieldList ParamDec(struct node *root) {$/;"	f
 ParamDec	syntax.y	/^ParamDec	:	Specifier VarDec				{ $$ = createNode(2, "ParamDec", $2, $1); }$/;"	l
 Pos	m1.c	/^int Pos;$/;"	v
 Pos	m1.c	/^struct Pos {$/;"	s	file:
+Position	s2.c	/^struct Position$/;"	s	file:
 Position	t13.c	/^struct Position$/;"	s	file:
 Position	t14.c	/^struct Position$/;"	s	file:
 Position	t15.c	/^struct Position$/;"	s	file:
@@ -140,6 +141,10 @@ Structure	node.h	/^	enum { Int, Float, Array, Structure } kind;$/;"	e	enum:Type_
 TYPE	syntax.tab.c	/^     TYPE = 261,$/;"	e	enum:yytokentype	file:
 TYPE	syntax.tab.h	/^     TYPE = 261,$/;"	e	enum:yytokentype
 Tag	syntax.y	/^Tag			:	ID								{ $$ = createNode(1, "Tag", $1); }$/;"	l
+Temp1	s5.c	/^struct Temp1$/;"	s	file:
+Temp1	s6.c	/^struct Temp1$/;"	s	file:
+Temp2	s5.c	/^struct Temp2$/;"	s	file:
+Temp2	s6.c	/^struct Temp2$/;"	s	file:
 Type	node.h	/^typedef struct Type_* Type;$/;"	t	typeref:struct:Type_
 Type_	node.h	/^typedef struct Type_ {$/;"	s
 Type_	node.h	/^} Type_;$/;"	t	typeref:struct:Type_
@@ -295,6 +300,7 @@ argList	node.h	/^	FieldList argList;			\/\/参数列表$/;"	m	struct:FunctionMes
 array	node.h	/^		struct { Type elem; int size; } array; $/;"	m	union:Type_::__anon2	typeref:struct:Type_::__anon2::__anon4
 basic	node.h	/^		union { int intValue; float floatValue; } basic;$/;"	m	union:Type_::__anon2	typeref:union:Type_::__anon2::__anon3
 calc	node.c	/^int calc(int base, int st, char *s) {$/;"	f
+checkfuncdef	semtanic.c	/^void checkfuncdef() {$/;"	f
 child	node.h	/^	struct node *child;$/;"	m	struct:node	typeref:struct:node::node
 compare	semtanic.c	/^int compare(FieldList v1, FieldList v2) {	$/;"	f
 compareType	semtanic.c	/^int compareType(Type t1, Type t2) {$/;"	f
@@ -320,6 +326,10 @@ flex_uint8_t	lex.yy.c	/^typedef unsigned char flex_uint8_t; $/;"	t	file:
 floatValue	node.h	/^		union { int intValue; float floatValue; } basic;$/;"	m	union:Type_::__anon2::__anon3
 func	m2.c	/^int func(int a, int c[10]) {$/;"	f
 func	m3.c	/^int func(int a, int b, int c) {$/;"	f
+func	m5.c	/^int func(int a, int a) {$/;"	f
+func	s1.c	/^int func(int a)$/;"	f
+func	s3.c	/^int func()$/;"	f
+func	s4.c	/^int func()$/;"	f
 func	t4.c	/^int func()$/;"	f
 func	t4.c	/^int func(int i)$/;"	f
 func	t9.c	/^int func(int i)$/;"	f
@@ -327,13 +337,17 @@ funcHashtable	node.h	/^FunctionMessage *funcHashtable[HASHSIZE];$/;"	v
 getargList	semtanic.c	/^char *getargList(FieldList arg) {$/;"	f
 hash_pjw	node.c	/^unsigned int hash_pjw(char *name) {$/;"	f
 head	node.h	/^	FieldList head; 			\/\/上一个变量$/;"	m	struct:FieldList_
+i	s5.c	/^	int i;$/;"	m	struct:Temp1	file:
+i	s6.c	/^	int i;$/;"	m	struct:Temp1	file:
 init	semtanic.c	/^void init() {$/;"	f
-insertFunc	semtanic.c	/^int insertFunc(FunctionMessage *func) {$/;"	f
+insertFunc	semtanic.c	/^void insertFunc(FunctionMessage *func) {$/;"	f
 insertStruct	semtanic.c	/^int insertStruct(FieldList struc) {$/;"	f
 insertVar	semtanic.c	/^int insertVar(FieldList var, int lvl) {$/;"	f
 intValue	node.h	/^		union { int intValue; float floatValue; } basic;$/;"	m	union:Type_::__anon2::__anon3
 isError	syntax.tab.c	/^	int isError;$/;"	v
 isTerminal	node.h	/^	int	isTerminal;				\/\/是否为终结符号$/;"	m	struct:node
+j	s5.c	/^	float j;$/;"	m	struct:Temp1	file:
+j	s6.c	/^	float j;$/;"	m	struct:Temp1	file:
 kind	node.h	/^	enum { Int, Float, Array, Structure } kind;$/;"	m	struct:Type_	typeref:enum:Type_::__anon1
 level	node.h	/^	int level;$/;"	m	struct:FieldList_
 level	node.h	/^int level;$/;"	v
@@ -344,7 +358,15 @@ main	a1.c	/^int main(int i, int j) $/;"	f
 main	a2.c	/^int main()$/;"	f
 main	m1.c	/^int main() {$/;"	f
 main	m2.c	/^int main() {$/;"	f
+main	m4.c	/^int main()$/;"	f
+main	m5.c	/^int main()$/;"	f
 main	main.c	/^int main(int argc, char **argv) {$/;"	f
+main	s1.c	/^int main()$/;"	f
+main	s2.c	/^int main()$/;"	f
+main	s3.c	/^int main()$/;"	f
+main	s4.c	/^int main()$/;"	f
+main	s5.c	/^int main()$/;"	f
+main	s6.c	/^int main()$/;"	f
 main	semtanic.c	/^int main(int argc, char **argv) {$/;"	f
 main	t1.c	/^int main()$/;"	f
 main	t10.c	/^int main()$/;"	f
@@ -369,6 +391,7 @@ newNode	node.c	/^struct node *newNode(int isTerminal, int line, char* type, char
 next	node.h	/^	struct FunctionMessage *next;		\/\/下一个函数$/;"	m	struct:FunctionMessage	typeref:struct:FunctionMessage::FunctionMessage
 next	node.h	/^	struct node *next;$/;"	m	struct:node	typeref:struct:node::node
 node	node.h	/^struct node {$/;"	s
+pos	m2.c	/^struct pos {$/;"	s	file:
 printTree	node.c	/^void printTree(struct node* root, int indent) {$/;"	f
 returnType	node.h	/^	Type returnType;			\/\/返回值类型$/;"	m	struct:FunctionMessage
 root	node.h	/^struct node *root;$/;"	v	typeref:struct:node
@@ -396,12 +419,18 @@ value	node.h	/^	char *value;					\/\/属性值$/;"	m	struct:node
 varHashtable	node.h	/^FieldList varHashtable[HASHSIZE];$/;"	v
 visitedTag	node.h	/^	int visitedTag;				\/\/0:声明,1:定义$/;"	m	struct:FunctionMessage
 x	m1.c	/^	int x, y;$/;"	m	struct:Pos	file:
+x	m2.c	/^	int x;$/;"	m	struct:pos	file:
+x	s2.c	/^	float x, y;$/;"	m	struct:Position	file:
+x	s5.c	/^	int x;$/;"	m	struct:Temp2	file:
+x	s6.c	/^	int x;$/;"	m	struct:Temp2	file:
 x	t13.c	/^	float x, y;$/;"	m	struct:Position	file:
 x	t14.c	/^	float x, y;$/;"	m	struct:Position	file:
 x	t15.c	/^	float x, y;$/;"	m	struct:Position	file:
 x	t15.c	/^	int x;$/;"	m	struct:Position	file:
 x	t16.c	/^	float x;$/;"	m	struct:Position	file:
 y	m1.c	/^	int x, y;$/;"	m	struct:Pos	file:
+y	s2.c	/^	float x, y;$/;"	m	struct:Position	file:
+y	s5.c	/^	float y;$/;"	m	struct:Temp2	file:
 y	t13.c	/^	float x, y;$/;"	m	struct:Position	file:
 y	t14.c	/^	float x, y;$/;"	m	struct:Position	file:
 y	t15.c	/^	float x, y;$/;"	m	struct:Position	file:

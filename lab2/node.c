@@ -108,6 +108,7 @@ void printTree(struct node* root, int indent) {
 }
 
 unsigned int hash_pjw(char *name) {
+	if (name == NULL) return 0;
 	unsigned int val = 0, i;
 	for (; *name; ++ name) {
 		val = (val << 2) + *name;

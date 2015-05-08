@@ -1,0 +1,131 @@
+Program (1)
+  ExtDefList (1)
+    ExtDef (1)
+      Specifier (1)
+        StructSpecifier (1)
+          STRUCT
+          OptTag (1)
+            ID: Vector
+          LC
+          DefList (4)
+            Def (4)
+              Specifier (4)
+                TYPE: float
+              DecList (4)
+                Dec (4)
+                  VarDec (4)
+                    ID: x
+                COMMA
+                DecList (4)
+                  Dec (4)
+                    VarDec (4)
+                      ID: y
+              SEMI
+          RC
+      SEMI
+    ExtDefList (7)
+      ExtDef (7)
+        Specifier (7)
+          TYPE: float
+        FunDec (7)
+          ID: dotmultiply
+          LP
+          VarList (7)
+            ParamDec (7)
+              Specifier (7)
+                StructSpecifier (7)
+                  STRUCT
+                  Tag (7)
+                    ID: Vector
+              VarDec (7)
+                ID: v1
+            COMMA
+            VarList (7)
+              ParamDec (7)
+                Specifier (7)
+                  StructSpecifier (7)
+                    STRUCT
+                    Tag (7)
+                      ID: Vector
+                VarDec (7)
+                  ID: v2
+          RP
+        CompSt (8)
+          LC
+          StmtList (10)
+            Stmt (10)
+              RETURN
+              Exp (10)
+                Exp (10)
+                  Exp (10)
+                    Exp (10)
+                      ID: v1
+                    DOT
+                    ID: x
+                  STAR
+                  Exp (10)
+                    Exp (10)
+                      ID: v2
+                    DOT
+                    ID: y
+                MINUS
+                Exp (10)
+                  Exp (10)
+                    Exp (10)
+                      ID: v1
+                    DOT
+                    ID: y
+                  STAR
+                  Exp (10)
+                    Exp (10)
+                      ID: v2
+                    DOT
+                    ID: x
+              SEMI
+          RC
+      ExtDefList (14)
+        ExtDef (14)
+          Specifier (14)
+            TYPE: int
+          FunDec (14)
+            ID: main
+            LP
+            RP
+          CompSt (15)
+            LC
+            DefList (17)
+              Def (17)
+                Specifier (17)
+                  StructSpecifier (17)
+                    STRUCT
+                    Tag (17)
+                      ID: Vector
+                DecList (17)
+                  Dec (17)
+                    VarDec (17)
+                      ID: sv1
+                  COMMA
+                  DecList (17)
+                    Dec (17)
+                      VarDec (17)
+                        ID: sv2
+                SEMI
+            StmtList (18)
+              Stmt (18)
+                Exp (18)
+                  Exp (18)
+                    ID: dotmultiply
+                    LP
+                    Args (18)
+                      Exp (18)
+                        ID: sv1
+                      COMMA
+                      Args (18)
+                        Exp (18)
+                          ID: sv2
+                    RP
+                  ASSIGNOP
+                  Exp (18)
+                    FLOAT: 1.434000
+                SEMI
+            RC
