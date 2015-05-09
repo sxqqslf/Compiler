@@ -6,12 +6,12 @@ extern int isError;
 
 %option yylineno
 digit		[0-9]
-letter		[A-Za-z]
+letter		[A-Za-z_]
 float		{digit}*(\.{digit}*)([Ee][+-]?{digit}+)?
 int			0|([1-9]{digit}{0,9})
 octal		0[0-7]+
 hex			0[xX][0-9A-Fa-f]+
-id			({letter}|_)({letter}|{digit}|_)*
+id			({letter})({letter}|{digit})*
 delim		[ \t]
 ws			{delim}+
 comment		\/\*([^*"]*|".*"|\*+[^/])*\*\/

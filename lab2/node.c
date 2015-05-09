@@ -6,7 +6,6 @@ struct node *newNode(int isTerminal, int line, char* type, char* value) {
 	ret->line = line;
 	ret->type = malloc(strlen(type)+1);
 	strcpy(ret->type, type);
-	ret->value = malloc(strlen(type)+1);
 	strcpy(ret->value, value);
 	ret->child = ret->next = NULL;
 	return ret;

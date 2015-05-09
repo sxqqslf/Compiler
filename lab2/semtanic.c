@@ -3,6 +3,8 @@
 #include "node.h"
 #include "syntax.tab.h"
 
+//INITIALIZE THE SYMBOL TABLE, INCLUDE 'VAR','FUNCTION','STRUCTURE'
+//LEVEL IS USED FOR MARK THE 'LEVEL'
 void init() {
 	int i;
 	for (i = 0; i <= HASHSIZE; i ++)
@@ -11,6 +13,7 @@ void init() {
 	level = 0;
 }
 
+//COPYFIELD, MOST USE FOR COPY VAR
 void copyField(FieldList dst, FieldList src) {
 	FieldList last = dst;
 	while (src != NULL) {
@@ -20,7 +23,7 @@ void copyField(FieldList dst, FieldList src) {
 		} else 
 			last->name = NULL;
 		last->lineno = src->lineno;
-		last->level = src->level;
+		last->level	= src->level;
 		last->type = (Type)malloc(sizeof(Type_));
 		copyType(last->type, src->type);
 		last->down = last->tail = last->head = NULL;
@@ -32,6 +35,7 @@ void copyField(FieldList dst, FieldList src) {
 	}
 }
 
+//COTYPTYPE, USED IN COPYFIELD..
 void copyType(Type dst, Type src) {
 	if (src == NULL) { dst = NULL; return ; }
 	dst->kind = src->kind;
@@ -48,6 +52,7 @@ void copyType(Type dst, Type src) {
 	}
 }
 
+//INSERT A VAR TO THE TABLE, AND CHECK WHETHER EXISTS SUCH VAR IN THE SAME LEVLE
 int insertVar(FieldList var, int lvl) {
 	unsigned int index = hash_pjw(var->name);	
 	if (varHashtable[index] == NULL) {
@@ -66,29 +71,30 @@ int insertVar(FieldList var, int lvl) {
 	return 1;
 }
 
+//INSERT FUNCTION TO THE TABLE, AND CHECK ..
 void insertFunc(FunctionMessage *func) {
 	unsigned int index = hash_pjw(func->name);
-	if (funcHashtable[index] == NULL) 
-		funcHashtable[index] = func;
-	else {
-		FunctionMessage *ptr = funcHashtable[index];
-		if (strcmp(ptr->name, func->name) == 0) {
-			int flag = compareType(ptr->returnType, func->returnType) || compare(func->argList, ptr->argList);
-			int sum = ptr->visitedTag + func->visitedTag;
-			if ((sum == 0 || sum == 1) && flag) {
-				printf("Error type 19 at Line %d: Inconsistent declaration of function \"%s\".\n", func->lineno, func->name);
-				ptr->visitedTag = func->visitedTag;
-			}
-			if (sum == 2)
-				printf("Error type 4 at Line %d: Redefined function \"%s\".\n", func->lineno, func->name);
-			if (!flag) ptr->visitedTag = func->visitedTag;
-		} else {
-			while (ptr->next != NULL) ptr = ptr->next; 
-			ptr->next = func;
+	if (funcHashtable[index] == NULL) {
+		funcHashtable[index] = func; return ;
+	}
+	FunctionMessage *ptr = funcHashtable[index];
+	if (strcmp(ptr->name, func->name) == 0) {
+		int flag = compareType(ptr->returnType, func->returnType) || compare(func->argList, ptr->argList);
+		int sum = ptr->visitedTag + func->visitedTag;
+		if ((sum == 0 || sum == 1) && flag) {
+			printf("Error type 19 at Line %d: Inconsistent declaration of function \"%s\".\n", func->lineno, func->name);
+			ptr->visitedTag = func->visitedTag;
 		}
+		if (sum == 2)
+			printf("Error type 4 at Line %d: Redefined function \"%s\".\n", func->lineno, func->name);
+		if (!flag) ptr->visitedTag = func->visitedTag;
+	} else {
+		while (ptr->next != NULL) ptr = ptr->next; 
+		ptr->next = func;
 	}
 }
 
+//CHECK WHETHER EXIST A FUNCTION HASN'T BEEN DEFINED..
 void checkfuncdef() {
 	int i;
 	for (i = 0; i < HASHSIZE; i ++) 
@@ -102,6 +108,7 @@ void checkfuncdef() {
 		}
 }
 
+//START POINT..
 void travel(struct node *root) {
 	if (root == NULL) return ;
 
@@ -109,6 +116,7 @@ void travel(struct node *root) {
 	checkfuncdef();
 }
 
+//EXTDEFLIST -> EXTDEF EXTDEFLIST..
 void ExtDefList(struct node *root) {
 	if (root == NULL) return ;
 
@@ -116,6 +124,7 @@ void ExtDefList(struct node *root) {
 	ExtDefList(root->child->next);
 }
 
+//EXTDEF -> SPECIFISER..
 void ExtDef(struct node *root) {
 	if (root == NULL) return ;
 
@@ -131,14 +140,13 @@ void ExtDef(struct node *root) {
 			del(stack[top-1]); stack[--top] = NULL;
 		} else { 
 			FunctionMessage *funType = FunDec(child->next, type, 1, &stack[top ++]);
-			//函数定义里的Compst，把参数传入，和第一层的Compst中的变量比较，不能有相同, 并且把返回类型传入
-			//Compst结束后，会把函数体内的变量都free，包括函数的参数
 			Compst(child->next->next, stack[top-1], type, 1);
 		}
 		level --;
 	}
 }
 
+//EXTDECLIST -> VARDEC..
 void ExtDecList(struct node *root, Type type) {
 	if (root == NULL) return ;
 
@@ -149,6 +157,7 @@ void ExtDecList(struct node *root, Type type) {
 		ExtDecList(child->next->next, type);
 }
 
+//SPECIFIER -> ..
 Type Specifier(struct node *root) {
 	if (root == NULL) return NULL;
 	
@@ -167,6 +176,7 @@ Type Specifier(struct node *root) {
 	return ret;
 }
 
+//STRUCTSPECIFIER -> ..
 Type StructSpecifier(struct node *root) {
 	if (root == NULL) return NULL;
 
@@ -204,6 +214,7 @@ Type StructSpecifier(struct node *root) {
 	}
 }
 
+//DEFLIST -> ..
 FieldList DefList(struct node *root, int isStruct, FieldList first) {
 	if (root == NULL) return NULL;
 
@@ -225,22 +236,26 @@ FieldList DefList(struct node *root, int isStruct, FieldList first) {
 		tmp = tmp->down;
 	}
 
-	if (first == NULL) first = ret;
-	//else if (flag) first->down = ret;
-
 	tmp = first;
-	if (tmp != NULL)
+	if (first == NULL) first = ret;
+	else {
 		while (tmp->down != NULL) tmp = tmp->down;
-	if (child != NULL) {
-		if (tmp == NULL) 
-			tmp = DefList(child->next, isStruct, first);
-		else 
-			tmp->down = DefList(child->next, isStruct, first);
+		tmp->down = ret;
 	}
 
+	tmp = first;
+	if (first != NULL)
+		while (first->down != NULL) first = first->down;
+	if (child != NULL) {
+		if (first == NULL) 
+			first = DefList(child->next, isStruct, tmp);
+		else 
+			first->down = DefList(child->next, isStruct, tmp);
+	}
 	return ret;
 }
 
+//DEF -> ..
 FieldList Def(struct node *root, int isStruct) {
 	if (root == NULL) return NULL;
 
@@ -252,29 +267,20 @@ FieldList Def(struct node *root, int isStruct) {
 	return ret;
 }
 
+//DECLIST -> ..
 FieldList DecList(FieldList first, struct node *root, Type type, int isStruct)  {
 	if (root == NULL) return NULL;
 
 	struct node *child = root->child;
 	FieldList ret = Dec(child, type, isStruct);
 
-	/*FieldList tmp = first; 
-	int flag = 1;
-	while (tmp != NULL && ret != NULL) {
-		if (strcmp(tmp->name, ret->name) == 0) {
-			if (isStruct) {
-				printf("Error type 15 at Line %d: Redefined field \"%s\".\n", child->line, ret->name);
-				flag = 0; break;
-			} else {
-				printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", child->line, ret->name);
-				flag = 0; break;
-			}
-		}
-		tmp = tmp->down;
-	}*/
-
 	if (first == NULL) first = ret;
-	else first->down = ret;
+	else { 
+		FieldList tmp = first; 
+		while (tmp->down != NULL) tmp = tmp->down;
+		tmp->down = ret;
+	}
+
 	child = child->next; 
 	if (child != NULL) {
 		FieldList tmp = first;
@@ -287,6 +293,7 @@ FieldList DecList(FieldList first, struct node *root, Type type, int isStruct)  
 	return ret;
 }
 
+//DEC -> ..
 FieldList Dec(struct node *root, Type type, int isStruct) {
 	if (root == NULL) return NULL;
 
@@ -294,6 +301,9 @@ FieldList Dec(struct node *root, Type type, int isStruct) {
 	FieldList ret = VarDec(child, type, isStruct, 1);	
 
 	if (child->next != NULL) {
+		if (isStruct) {
+			printf("Error type 15 at Line %d: Nonpermissible assign value to a struct field.\n", child->line);
+		}
 		Type tmp = Exp(child->next->next);
 		if (tmp != NULL && compareType(tmp, type) != 0) {
 			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", child->line);
@@ -304,25 +314,22 @@ FieldList Dec(struct node *root, Type type, int isStruct) {
 	return ret;
 }
 
+//COMPST -> ..
 void Compst(struct node *root, FieldList arg, Type returnType, int funcdef) {
 	if (root == NULL) return ;
 
-	int topstore = top;
-	struct node *child = root->child->next;		//DefList
-	if (funcdef) {								//函数定义部分的Compst
+	struct node *child = root->child->next;						//DefList
+	if (funcdef) {												//函数定义部分的Compst
 		if (strcmp(child->type, "DefList") == 0) {
 			FieldList varIn = DefList(child, 0, NULL);			//change	
-			FieldList store = varIn, tmp = arg;
-
 			if (arg == NULL) { 
 				arg = varIn; stack[top-1] = varIn; 
 			} else {
-				//把和函数参数同一层的变量链表接到参数表的后方
-				while (arg->down!= NULL) arg = arg->down;
+				while (arg->down!= NULL) arg = arg->down; 		//把和函数参数同一层的变量链表接到参数表的后方
 				arg->down = varIn;
 			}
 		}
-	} else {					//StmtList部分的Compst
+	} else {													//StmtList部分的Compst
 		level ++;
 		if (strcmp(child->type, "DefList") == 0) {
 			FieldList varIn = DefList(child, 0, arg);	
@@ -341,6 +348,7 @@ void Compst(struct node *root, FieldList arg, Type returnType, int funcdef) {
 	del(stack[top-1]); stack[--top] = NULL;
 }
 
+//STMTLIST
 void StmtList(struct node *root, Type returnType) {
 	if (root == NULL) return ;
 	
@@ -349,6 +357,7 @@ void StmtList(struct node *root, Type returnType) {
 	if (child != NULL) StmtList(child->next, returnType);
 }
 
+//STMT
 void Stmt(struct node *root, Type returnType) {
 	if (root == NULL) return ;
 
@@ -374,6 +383,7 @@ void Stmt(struct node *root, Type returnType) {
 	}
 }
 
+//FUNDEC
 FunctionMessage *FunDec(struct node *root, Type type, int isdefine, FieldList *stack) {
 	if (root == NULL) return NULL;
 
@@ -401,6 +411,7 @@ FunctionMessage *FunDec(struct node *root, Type type, int isdefine, FieldList *s
 	return ret;
 }
 
+//VARLIST -> ..
 FieldList VarList(struct node *root) {
 	if (root == NULL) return NULL;
 
@@ -417,6 +428,7 @@ FieldList VarList(struct node *root) {
 	return ret;
 }
 
+//PARAMDEC -> ..
 FieldList ParamDec(struct node *root) {
 	if (root == NULL) return NULL;
 
@@ -426,6 +438,7 @@ FieldList ParamDec(struct node *root) {
 	return VarDec(child->next, type, 0, 1);
 }
 
+//VARDEC -> ..
 FieldList VarDec(struct node *root, Type type, int isStruct, int top) {
 	if (root == NULL) return NULL;
 
@@ -453,8 +466,9 @@ FieldList VarDec(struct node *root, Type type, int isStruct, int top) {
 	return ret;
 }
 
+//GETARGLIST
 char *getargList(FieldList arg) {
-	int flag = 0;
+	int	flag = 0;
 	char *argl = malloc(100);
 	
 	memset(argl, 0, 100);
@@ -481,6 +495,7 @@ char *getargList(FieldList arg) {
 }
 
 char *arr = NULL;
+//EXP -> ..
 Type Exp(struct node *root) {
 	if (root == NULL) return NULL;
 
@@ -616,13 +631,13 @@ Type Exp(struct node *root) {
 	}
 }
 
+//ARGS -> ..
 FieldList Args(struct node *root) {
 	if (root == NULL) return NULL;
 
 	struct node *child = root->child;
 	Type type = Exp(child);
 	FieldList ret = (FieldList)malloc(sizeof(FieldList_));
-
 	ret->name = NULL;
 	ret->lineno = child->line;
 	ret->type = (Type)malloc(sizeof(Type_));
@@ -636,6 +651,7 @@ FieldList Args(struct node *root) {
 	return ret;
 }
 
+//COMPARE TWO FIELDLIST 
 int compare(FieldList v1, FieldList v2) {	
 	//同为结构体，且相同
 	while ( 1 ) {
@@ -647,13 +663,13 @@ int compare(FieldList v1, FieldList v2) {
 			} else if (v1->type->kind == 2) {	//数组
 				if (compareType(v1->type->u.array.elem, v2->type->u.array.elem)) return 1;
 			} 
-			v1 = v1->down;
-			v2 = v2->down;
+			v1 = v1->down; v2 = v2->down;
 		} else 
 			return 1;
 	}
 }
 
+//COMPARE TWO TYPE
 int compareType(Type t1, Type t2) {
 	while ( 1 ) {
 		if (t1->kind != t2->kind) return 1;				//类型不同，直接返回
@@ -667,6 +683,7 @@ int compareType(Type t1, Type t2) {
 	}
 }
 
+//INSERT STRUCT TO THE TABLE
 int insertStruct(FieldList struc) {
 	int index = hash_pjw(struc->name);	
 
@@ -686,6 +703,7 @@ int insertStruct(FieldList struc) {
 	return 0;
 }
 
+//DELETE THE FIELDLIST FROM TABLE
 void del(FieldList obj) {
 	if (obj == NULL) return ;
 
@@ -693,7 +711,6 @@ void del(FieldList obj) {
 		int index = hash_pjw(obj->name);
 		varHashtable[index] = obj->tail;
 		if (obj->tail != NULL) obj->head = NULL;
-
 		FieldList tmp = obj;
 		obj = obj->down;
 		free(tmp->name);
@@ -702,6 +719,7 @@ void del(FieldList obj) {
 	}
 }
 
+//DELETE THE TYPE
 void dell(Type t) {
 	if (t == NULL) return ;
 	if (t->kind == 0 || t->kind == 1) {
@@ -713,6 +731,7 @@ void dell(Type t) {
 		del(t->u.structure);
 }
 
+//MAIN FUNCTION
 int main(int argc, char **argv) {
 	init();
 	FILE *f = fopen(argv[1], "r");
