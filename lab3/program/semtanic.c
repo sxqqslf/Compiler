@@ -12,6 +12,13 @@ void init() {
 		funcHashtable[i] = NULL;
 	level = 0;
 	
+	FieldList arg = (FieldList)malloc(sizeof(FieldList_));
+	arg->name = NULL; 
+	arg->tail = arg->head = arg->down = NULL;
+	Type type = (Type)malloc(sizeof(Type_));
+	type->kind = 0;
+	arg->type = type;
+
 	FunctionMessage *funcr = (FunctionMessage *)malloc(sizeof(FunctionMessage));
 	funcr->name = malloc(strlen("read") + 1);
 	strcpy(funcr->name, "read");
@@ -28,7 +35,7 @@ void init() {
 	funcw->lineno = 0;
 	funcw->visitedTag = 1;
 	funcw->returnType = NULL;
-	funcw->argList = NULL;
+	funcw->argList = arg;
 	funcw->next = NULL;
 	insertFunc(funcw);
 }

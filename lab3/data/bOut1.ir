@@ -1,0 +1,65 @@
+FUNCTION sort :
+PARAM v1
+DEC v2 400
+v3 := #0
+v4 := #0
+LABEL label1 :
+IF v3 >= v1 GOTO label3
+t5 := v3 * #2
+t3 := #100 - t5
+t9 := v3 * #4
+t7 := &v2 + t9
+*t7 := t3
+v3 := v3 + #1
+GOTO label1
+LABEL label3 :
+v3 := #0
+LABEL label4 :
+IF v3 >= v1 GOTO label6
+v4 := #0
+LABEL label7 :
+IF v4 >= v3 GOTO label9
+t12 := v3 * #4
+t10 := &v2 + t12
+t14 := v4 * #4
+t12 := &v2 + t14
+IF *t10 >= *t12 GOTO label11
+t16 := v3 * #4
+t14 := &v2 + t16
+v5 := *t14
+t18 := v4 * #4
+t16 := &v2 + t18
+t20 := v3 * #4
+t18 := &v2 + t20
+*t18 := *t16
+t22 := v4 * #4
+t20 := &v2 + t22
+*t20 := v5
+LABEL label11 :
+v4 := v4 + #1
+GOTO label7
+LABEL label9 :
+v3 := v3 + #1
+GOTO label4
+LABEL label6 :
+v3 := #0
+LABEL label12 :
+IF v3 >= v1 GOTO label14
+t26 := v3 * #4
+t24 := &v2 + t26
+WRITE *t24
+v3 := v3 + #1
+GOTO label12
+LABEL label14 :
+RETURN #0
+FUNCTION main :
+READ v6
+IF v6 < #100 GOTO label16
+t29 := #0 - #1
+WRITE t29
+GOTO label17
+LABEL label16 :
+ARG v6
+(null) := CALL sort
+LABEL label17 :
+RETURN #0

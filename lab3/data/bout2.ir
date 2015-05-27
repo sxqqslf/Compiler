@@ -1,0 +1,74 @@
+FUNCTION josef :
+PARAM v1
+DEC v2 84
+v3 := #0
+v4 := #0
+LABEL label1 :
+IF v3 < #21 GOTO label2
+GOTO label3
+LABEL label2 :
+t4 := v3 + #1
+t8 := v3 * #4
+t6 := &v2 + t8
+*t6 := t4
+v3 := v3 + #1
+GOTO label1
+LABEL label3 :
+v3 := #0
+LABEL label4 :
+IF v3 < #21 GOTO label5
+GOTO label6
+LABEL label5 :
+v5 := #1
+LABEL label7 :
+IF v5 < v1 GOTO label8
+GOTO label9
+LABEL label8 :
+LABEL label10 :
+t12 := v4 * #4
+t10 := &v2 + t12
+IF *t10 == #0 GOTO label11
+GOTO label12
+LABEL label11 :
+t13 := v4 + #1
+t17 := v4 + #1
+t16 := t17 / #21
+t15 := t16 * #21
+v4 := t13 - t15
+GOTO label10
+LABEL label12 :
+v5 := v5 + #1
+t22 := v4 + #1
+t26 := v4 + #1
+t25 := t26 / #21
+t24 := t25 * #21
+v4 := t22 - t24
+GOTO label7
+LABEL label9 :
+LABEL label13 :
+t32 := v4 * #4
+t30 := &v2 + t32
+IF *t30 == #0 GOTO label14
+GOTO label15
+LABEL label14 :
+t33 := v4 + #1
+t37 := v4 + #1
+t36 := t37 / #21
+t35 := t36 * #21
+v4 := t33 - t35
+GOTO label13
+LABEL label15 :
+t43 := v4 * #4
+t41 := &v2 + t43
+WRITE *t41
+t46 := v4 * #4
+t44 := &v2 + t46
+*t44 := #0
+v3 := v3 + #1
+GOTO label4
+LABEL label6 :
+RETURN #0
+FUNCTION main :
+ARG #5
+(null) := CALL josef
+RETURN #0

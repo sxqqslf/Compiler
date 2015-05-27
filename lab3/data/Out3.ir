@@ -1,0 +1,24 @@
+FUNCTION main :
+v1 := #3
+v2 := #4
+t3 := v1 * v1
+t4 := v2 * v2
+v3 := t3 + t4
+WRITE v3
+t5 := v1 + v3
+v3 := t5 / v2
+WRITE v3
+v1 := v1 + v2
+v2 := v1 - v2
+v1 := v1 - v2
+t8 := v1 - v2
+t7 := t8 * #2
+t6 := t7 - #1
+t12 := v1 / v2
+t15 := #3 + v2
+t13 := #2 * t15
+t11 := t12 * t13
+v2 := t6 + t11
+WRITE v1
+WRITE v2
+RETURN #0

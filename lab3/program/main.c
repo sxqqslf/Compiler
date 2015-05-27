@@ -4,6 +4,11 @@
 #include "node.h"
 
 int main(int argc, char **argv) {
+	if (argc < 3) {
+		printf("Usage: ./parser test.c output.c\n");
+		exit(0);
+	}
+
 	init();
 	FILE *f = fopen(argv[1], "r");
 	if (!f) {
@@ -13,9 +18,16 @@ int main(int argc, char **argv) {
 	root = NULL; 
 	yyrestart(f); 
 	yyparse();
+	close(f);
 
+	f = fopen(argv[2], "w");
 	travel(root);
-	translate(root);
+	INIT();
+	st = translate(root);
+	optimal(st);
+	removeLabel(st);
+	printCode(st, f);
+	close(f);
 
 	return 0;
 }
