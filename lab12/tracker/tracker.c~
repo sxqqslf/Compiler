@@ -1,0 +1,343 @@
+#include "stdio.h"
+// 简单tracker的c文件
+
+
+char my_ip[16]; // 格式为XXX.XXX.XXX.XXX, null终止
+int my_port; // peer监听的端口号
+int infohash[5]; // 要共享或要下载的文件的SHA1哈希值, 每个客户端同时只能处理一个文件
+
+int main(int argc, char **argv)
+{
+
+	int listenfd, connfd;
+        int clilen, n, mark;
+        struct sockaddr_in cliaddr,servaddr;
+	if((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        {
+                perror("Problem in creating the socket");
+		exit(0);
+        }
+	
+	if(argc != 5)
+	{
+		printf("arguments: -i <tracker_ip> -p <tracker_port>\n");
+		exit(0);
+	}
+	strncpy(my_ip,argv[2],strlen(argv[2]));
+        my_ip[strlen(argv[2])+1] = '\0';
+
+        my_port = atoi(argv[4]);
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_addr.s_addr = inet_addr(my_ip);
+        servaddr.sin_port = htons(my_port);
+
+        bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+        listen(listenfd, 100000);
+	pthread_t thread[100000];
+	int t_count = 0;
+	while(1)
+	{
+		clilen = sizeof(cliaddr);
+                connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &clilen);
+		pthread_create(&thread[t_count++], NULL, process_req, (void*)&connfd);
+	}
+
+}
+
+#define BT_STARTED 0
+#define BT_COMPLETED 1
+#define BT_STOPPED 2
+
+typedef struct peer_node
+{
+	char* ip;
+	int port;
+	int current_time;	// 上次该peer发送报文的时间
+	int seeder_flag;	// 如果为1，代表该peer为seeder, 否则，代表该peer不为seeder
+}peer_node;
+
+typedef struct peer
+{
+	peer_node* this_peer;
+	struct peer* next;
+	struct peer* prev;
+}peer;
+
+#define TABLE_SIZE 1024
+peer* peer_table[TABLE_SIZE];
+
+peer* peer_list = NULL;	// 可用peer列表的头指针
+
+// hash函数
+unsigned int hash_function(char* name)
+{
+        unsigned int val = 0, i;
+        for(; *name; ++name)
+        {
+                val = (val << 2) + *name;
+                if(i = val & ~0x03ff)
+                        val = (val ^ (i >> 8)) & 0x03ff;
+        }
+        return val;
+}
+
+void* process_req(void* q)
+{
+	
+	int sockfd = *((int*)q);
+
+	char buffer[1000];
+	memset(buffer, 0, 1000);
+	int n;
+	int count = 0;
+	while((n = recv(sockfd, &buffer[count++], 1, 0)) > 0)	
+	{
+		if(count >= 4 && strncmp(&buffer[count-4], "\r\n", 4) == 0)
+		{
+			break;
+		}
+	}
+	//获得当前时间，并写入到发送段里，时间单位为微秒
+        struct timeval tv;
+        gettimeofday (&tv , NULL);
+	int current_time = tv.tv_sec;
+	// 找到info_hash
+	char* p = strstr(buffer, "info_hash");
+	int info_hash[5];
+	int i;
+	char* pure_hash = (char*)malloc(50);
+	memset(pure_hash, 0, 50);
+	count = 0;
+ 	p = p + 10;
+	while(*p != '&')
+	{
+		if(*p != '%')
+		{
+			pure_hash[count++] = *p;
+		}
+		p++;
+	}
+	if(strcmp(pure_hash, "6CE19B6C8770FBBD1BF741C6811B052C8CFB7D5F") != 0)
+		return NULL;
+	// 读取port
+	int port;
+	p = strstr(buffer, "&port=");
+	memset(pure_hash, 0, 50);
+	p = p + 6;
+	count = 0;
+	while(*p >= '0' && *p <= '9')
+	{
+		pure_hash[count++] = *p;
+		p++;
+	}
+	port = atoi(pure_hash);
+
+	// 读取ip
+	char ip[16];
+	memset(ip, 0, 16);
+	p = strstr(buffer, "&ip=");
+	p = p + 4;
+	count = 0;
+	while(*p != '&')
+	{
+		ip[count++] = *p;
+		p++;
+	}
+	// 读取left
+	int left = 0;
+	p = strstr(buffer, "&left=");
+        memset(pure_hash, 0, 50);
+        p = p + 6;
+        count = 0;
+        while(*p >= '0' && *p <= '9')
+        {
+                pure_hash[count++] = *p;
+                p++;
+        }
+        left = atoi(pure_hash);	
+
+	// 读取event
+	int event = -1;
+	p = strstr(buffer, "&event=");
+	if(p != NULL)
+	{
+		memset(pure_hash, 0, 50);
+        	p = p + 7;
+        	count = 0;
+        	while(*p != ' ')
+        	{
+                	pure_hash[count++] = *p;
+                	p++;
+        	}
+		if(strcmp(pure_hash, "started") == 0)
+			event = BT_STARTED;
+		else if(strcmp(pure_hash, "completed") == 0)
+			event = BT_COMPLETED;
+		else if(strcmp(pure_hash, "stopped") == 0)
+			event = BT_STOPPED;
+	}
+
+	// 根据event来执行相应动作
+		
+	// 如果为STARTED报文
+	if(event == BT_STARTED)
+	{
+		// 将该ip和port加入peer表中
+		// 如果该peer的left为0，标记该peer为seeder
+		i = hash_function(ip);
+                assert(i >= 0 && i < TABLE_SIZE);
+                // 取得该ip名应该在的hash表位置的指针
+                peer* t = peer_table[i];	
+		int flag = 0;
+		while(t != NULL)
+		{
+			if(strcmp(t->this_peer->ip, ip) == 0 && t->this_peer->port == port)
+			{
+				flag = 1;
+				break;
+			}
+			t = t->next;
+		}
+		// 如果ip和port没有重名，将其加入到hash表和链表中
+		if(flag == 0)
+		{
+			peer* this_p = (peer*)malloc(sizeof(peer));
+			memset(this_p, 0, sizeof(peer));
+			this_p->this_peer = (peer_node*)malloc(sizeof(peer_node));
+			memset(this_p->this_peer, 0, sizeof(peer_node));
+			this_p->next = NULL;
+			this_p->prev = NULL;
+			this_p->this_peer->ip = ip;
+			this_p->this_peer->port = port;
+			this_p->this_peer->current_time = current_time;
+			if(left == 0)
+				this_p->this_peer->seeder_flag = 1;
+			// 将其加入到hash表中
+			if(peer_table[i] == NULL)
+				peer_table[i] = this_p;
+			else
+			{
+				this_p->next = peer_table[i];
+				peer_table[i] = this_p;
+			}
+			// 将其加入到链表中
+			if(peer_list == NULL)
+				peer_list = this_p;
+			else
+			{
+				this_p->next = peer_list;
+				peer_list->prev = this_p;
+				peer_list = this_p;
+			}	
+			// 开启一个线程，来监控该peer是否能在interval时间回复报文
+                	pthread_t thread;
+                	pthread_create(&thread, NULL, monitor_alive,(void*)this_p);
+		}
+	}
+	// 如果是STOPPED报文
+	else if(event == STOPPED)
+	{
+		// 先去hash表
+                        int i = hash_function(ip);
+                        assert(i >= 0 && i < TABLE_SIZE);
+                        // 取得该ip名应该在的hash表位置的指针
+                        int flag = 0;
+                        if(peer_table[i] != NULL)
+                        {
+                                if(strcmp(peer_table[i]->this_peer->ip, this_p->this_peer->ip) == 0 &&                                                                     peer_table[i]->this_peer->port == this_p->this_peer->port)
+                                        peer_table[i] = peer_table[i]->next;
+                                else
+                                {
+                                        peer* pre = peer_table[i];
+                                        peer* t = peer_table[i]->next;
+                                        while(t != NULL)
+                                        {
+                                                if(strcmp(t->this_peer->ip, this_p->this_peer->ip) == 0 &&                                                                                  t->this_peer->port == this_p->this_peer->port)
+                                                {
+                                                        pre->next = t->next;
+                                                        break;
+                                                }
+                                                pre = t;
+                                                t = t->next;
+                                        }
+                                }
+                        }
+                        // 再去链表，释放内存
+                        peer* t = peer_list;
+                        while(t != NULL)
+                        {
+				if(strcmp(t->this_peer->ip, this_p->this_peer->ip) == 0 &&                                                                                  t->this_peer->port == this_p->this_peer->port)
+                                {
+                                        if(t->prev != NULL)
+                                                t->prev->next = t->next;
+                                        if(t->next != NULL)
+                                                t->next->prev = t->prev;
+                                	break;
+				}
+                                t = t->next;
+                        }
+	}
+
+}
+
+//监控线程，来监控该peer是否能在interval时间回复报文
+void* monitor_alive(void* p)
+{
+	peer* this_p = (peer*)p;
+	while(1)
+	{
+		// 睡眠interval时间
+		sleep(interval);
+		// 检查该peer的keep alive时间是否更新，如果没有更新，从表中去掉该peer信息
+		//获得当前时间，并写入到发送段里，时间单位为微秒
+        	struct timeval tv;
+        	gettimeofday (&tv , NULL);
+        	int current_time = tv.tv_sec;
+		if(current_time - this_p->this_peer->current_time > interval)
+		{
+			// 先去hash表
+			int i = hash_function(ip);
+                	assert(i >= 0 && i < TABLE_SIZE);
+                	// 取得该ip名应该在的hash表位置的指针
+                	int flag = 0;
+			if(peer_table[i] != NULL)
+			{
+				if(strcmp(peer_table[i]->this_peer->ip, this_p->this_peer->ip) == 0 &&                                                                     peer_table[i]->this_peer->port == this_p->this_peer->port)
+					peer_table[i] = peer_table[i]->next;
+				else
+				{
+					peer* pre = peer_table[i];
+					peer* t = peer_table[i]->next; 
+                			while(t != NULL)
+                			{
+                        			if(strcmp(t->this_peer->ip, this_p->this_peer->ip) == 0 &&                                                                                  t->this_peer->port == this_p->this_peer->port)
+                        			{
+							pre->next = t->next;
+                                			break;
+                        			}
+						pre = t;
+                        			t = t->next;
+                			}
+				}
+			}
+			// 再去链表，释放内存
+			peer* t = peer_list;
+			while(t != NULL)
+			{
+				if(strcmp(t->this_peer->ip, this_p->this_peer->ip) == 0 &&                                                                                  t->this_peer->port == this_p->this_peer->port)
+                              	{
+					if(t->prev != NULL)
+						t->prev->next = t->next;
+					if(t->next != NULL)
+						t->next->prev = t->prev;
+					break;
+                            	}
+				t = t->next;
+			}
+
+			free(this_p);
+			return NULL;
+		}	
+	}	
+}

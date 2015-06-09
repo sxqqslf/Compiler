@@ -1,0 +1,16 @@
+parser: su.l syntax.y
+	flex su.l
+	bison -d syntax.y
+	gcc syntax.tab.c -lfl -ly -g -o parser
+	
+
+.PHONY: play clean
+
+
+play: 
+	./parser test.c out.s
+clean:
+	rm parser
+	rm lex.yy.c
+	rm syntax.tab.c
+	rm syntax.tab.h
