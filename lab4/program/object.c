@@ -1,5 +1,5 @@
 #include "object.h"
-#define FRAMESIZE 256
+#define FRAMESIZE 512
 
 int offset;
 
